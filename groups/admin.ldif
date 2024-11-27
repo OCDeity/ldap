@@ -1,6 +1,0 @@
-dn: cn=admin,ou=Groups,dc=home,dc=arpa
-objectClass: posixGroup
-objectClass: top
-cn: admin
-description: Group for admin
-gidNumber: 1001
