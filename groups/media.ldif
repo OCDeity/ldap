@@ -1,0 +1,6 @@
+dn: cn=media,ou=Groups,dc=home,dc=arpa
+objectClass: posixGroup
+objectClass: top
+cn: media
+description: Group for media
+gidNumber: 1002

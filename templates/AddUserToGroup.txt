@@ -1,0 +1,5 @@
+dn: ${GROUP_DN}
+changetype: modify
+add: memberUid
+memberUid: ${USERNAME}
+

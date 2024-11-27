@@ -1,0 +1,6 @@
+dn: cn=$GROUPNAME,ou=Groups,$BASE_DN
+objectClass: posixGroup
+objectClass: top
+cn: $GROUPNAME
+description: Group for $GROUPNAME
+gidNumber: $NEW_GID

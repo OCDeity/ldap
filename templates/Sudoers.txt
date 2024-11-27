@@ -1,0 +1,9 @@
+dn: cn=sudoers,ou=groups,dc=home,dc=arpa
+objectClass: top
+objectClass: posixGroup
+objectClass: sudoRole
+cn: sudoers
+gidNumber: 500
+sudoUser: %sudoers
+sudoHost: ALL
+sudoCommand: ALL

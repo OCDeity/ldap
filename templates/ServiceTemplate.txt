@@ -1,0 +1,22 @@
+dn: cn=$SERVICE_NAME,ou=groups,$BASE_DN
+objectClass: top
+objectClass: posixGroup
+cn: $SERVICE_NAME
+gidNumber: $NEW_GID
+description: $SERVICE_NAME Service Group
+
+dn: uid=$SERVICE_NAME,ou=services,$BASE_DN
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: $SERVICE_NAME
+sn: Service
+givenName: $SERVICE_NAME
+cn: $SERVICE_NAME Service
+displayName: $SERVICE_NAME Service Account
+uidNumber: $NEW_UID
+gidNumber: $NEW_GID
+userPassword: $SERVICE_PW_HASH
+homeDirectory: /srv/$SERVICE_NAME
+loginShell: /sbin/nologin
+gecos: Service Account for $SERVICE_NAME

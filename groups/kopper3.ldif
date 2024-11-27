@@ -1,0 +1,6 @@
+dn: cn=kopper3,ou=groups,dc=example,dc=com
+objectClass: posixGroup
+objectClass: top
+cn: kopper3
+description: Group for kopper3
+gidNumber: 

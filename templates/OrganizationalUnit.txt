@@ -1,0 +1,4 @@
+dn: ou=$OU_NAME,$BASE_DN
+objectClass: organizationalUnit
+ou: $OU_NAME
+description: $OU_NAME Organizational Unit

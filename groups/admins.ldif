@@ -1,0 +1,6 @@
+dn: cn=admins,ou=Groups,dc=home,dc=arpa
+objectClass: posixGroup
+objectClass: top
+cn: admins
+description: Group for admins
+gidNumber: 5003
