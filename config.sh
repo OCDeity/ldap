@@ -27,6 +27,8 @@ LDAP_PASSWORD=
 # ID Number Related:
 NEW_UID=
 NEW_GID=
+LXC_UID=
+LXC_GID=
 
 # Additional:
 LXC_SERVICE=
@@ -93,6 +95,12 @@ function handle_show_options {
                 ;;
             "NEW_UID")
                 echo "  --new-uid <uid>            The new user ID."
+                ;;
+            "LXC_UID")
+                echo "  --lxc-uid <uid>            The user ID for the LXC service mapping."
+                ;;
+            "LXC_GID")
+                echo "  --lxc-gid <gid>            The group ID for the LXC service mapping."
                 ;;
             "PASSWORD")
                 echo "  --password <pass>          The password for the given user."
@@ -201,6 +209,16 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --new-uid)
             NEW_UID="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --lxc-uid)
+            LXC_UID="$2"
+            shift # past argument
+            shift # past value
+            ;;  
+        --lxc-gid)
+            LXC_GID="$2"
             shift # past argument
             shift # past value
             ;;

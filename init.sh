@@ -178,8 +178,8 @@ if [ "$lxc_root_mapping" == "true" ]; then
     SERVICE_NAME="root"
     LXC_SERVICE_NAME="lxc-root"
     SERVICE_PW_HASH="{SSHA}JRmjUSmev0sqdnRJpVd64gtfu6Rkyc7x"
-    NEW_UID="0000"
-    NEW_GID="0000"
+    LXC_UID="100000"
+    LXC_GID="100000"
 
     result=$(ldapUserExists "$LXC_SERVICE_NAME" "$BASE_DN")
     if [ "$result" != "true" ]; then
@@ -188,7 +188,7 @@ if [ "$lxc_root_mapping" == "true" ]; then
         SERVICE_LDIF=$(realpath "${SERVICE_LDIF_PATH}/${LXC_SERVICE_NAME}.ldif")
 
         # Export all of the variables we've collected and use them for templating
-        export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH NEW_UID NEW_GID
+        export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH LXC_UID LXC_GID
         TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/LxcServiceTemplate.txt")
         envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 

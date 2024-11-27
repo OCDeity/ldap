@@ -1,7 +1,7 @@
 #! /bin/bash
 
 REQUIRED_PARAMS=("SERVICE_NAME" "LDAP_PASSWORD")
-OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "LXC_SERVICE" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
+OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "LXC_SERVICE" "LXC_UID" "LXC_GID" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
 
 source ./config.sh
 source ./ldaplib.sh
@@ -78,8 +78,15 @@ fi
 
 if [ "$LXC_SERVICE" == "true" ]; then
 
+    if [ -z "$LXC_UID" ]; then
+        LXC_UID=$((NEW_UID+100000))
+    fi
+    if [ -z "$LXC_GID" ]; then
+        LXC_GID=$((NEW_GID+100000))
+    fi
+
     # Export all of the variables we've collected and use them for templating
-    export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH NEW_UID NEW_GID
+    export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH LXC_UID LXC_GID
     TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/LxcServiceTemplate.txt")
     envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
