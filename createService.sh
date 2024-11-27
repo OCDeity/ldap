@@ -1,5 +1,8 @@
 #! /bin/bash
 
+REQUIRED_PARAMS=("SERVICE_NAME" "LDAP_PASSWORD")
+OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
+
 source ./config.sh
 source ./ldaplib.sh
 
@@ -14,8 +17,10 @@ if [ -z "$BASE_DN" ]; then
     BASE_DN=$(getBaseDN)
 fi
 
-# Prompt for service name
-read -p "Enter service name: " SERVICE_NAME
+# Prompt for service name if it's not already set:  
+if [ -z "$SERVICE_NAME" ]; then
+    read -p "Enter service name: " SERVICE_NAME
+fi
 
 # Check if service already exists
 result=$(ldapUserExists "$SERVICE_NAME" "$BASE_DN")
@@ -39,13 +44,19 @@ if [ -e "${SERVICE_LDIF}" ]; then
 fi
 
 # Get the next available UID.  We will use the same ID for the group.
-NEW_UID=$(ldapGetNextServiceUID "$BASE_DN")
-NEW_GID="$NEW_UID"
+if [ -z "$NEW_UID" ]; then
+    NEW_UID=$(ldapGetNextServiceUID "$BASE_DN")
+fi
+if [ -z "$NEW_GID" ]; then
+    NEW_GID="$NEW_UID"
+fi
 
 # Check if service password hash exists, if not prompt for password
 if [ -z "$SERVICE_PW_HASH" ]; then
-    read -s -p "Service Password: " SERVICE_PASSWORD
-    echo ""
+    if [ -z "$SERVICE_PASSWORD" ]; then
+        read -s -p "Service Password: " SERVICE_PASSWORD
+        echo ""
+    fi
     SERVICE_PW_HASH=$(slappasswd -s "$SERVICE_PASSWORD") 
 fi
 
@@ -55,5 +66,5 @@ TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/ServiceTemplate.txt")
 envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
 # Import the new user into LDAP
-ldapAdd "$SERVICE_LDIF" "$BASE_DN"
+ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD"
 

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+REQUIRED_PARAMS=("USERNAME" "SURNAME" "GIVEN" "PW_HASH" "LDAP_PASSWORD")
+OPTIONAL_PARAMS=("BASE_DN"  "NEW_UID" "NEW_GID" "PASSWORD" "TEMPLATE_PATH" "USER_LDIF_PATH")
+
 # Include our settings:
 source ./ldaplib.sh
 source ./config.sh
@@ -16,26 +19,24 @@ if [ ! -d "${USER_LDIF_PATH}" ]; then
 fi
 
 
-# Default first user ID is 10000.  We'll take it or the greatest we found in ldap+1
-NEW_UID=$(ldapGetNextUID "$BASE_DN")
-NEW_GID="$NEW_GID"
+# Get the next available UID if it's not already set:   
+if [ -z "$NEW_UID" ]; then
+    NEW_UID=$(ldapGetNextUID "$BASE_DN")
+fi
+if [ -z "$NEW_GID" ]; then
+    NEW_GID="$NEW_UID"
+fi
 
 
-# Read in the new username:
-read -p "Username:   " USERNAME
+
+# Read in the new username if it's not already set:
+if [ -z "$USERNAME" ]; then
+    read -p "Username:   " USERNAME
+fi
 
 # Work out the path to the user .ldif
 USER_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}.ldif")
 
-# If an .ldif file with that name already exists, ask the user what to do:
-if [ -e "${USER_LDIF}" ]; then
-    read -p "The file ${USER_LDIF} exists.  Continue and Overwrite? (y/N)" response
-    response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
-    if ! [[ "$response" =~ ^(yes|y)$ ]]; then
-        echo "Aborting."
-        exit 0
-    fi
-fi
 
 result=$(ldapUserExists "$USERNAME" "$BASE_DN")
 if [ "${result}" == "true" ]; then
@@ -44,13 +45,20 @@ if [ "${result}" == "true" ]; then
     exit 0
 fi
 
-read -p "Surname:    " SURNAME
-read -p "Given Name: " GIVEN
-read -s -p "Passowrd:    " NEW_PASSWORD
-echo ""
+if [ -z "$SURNAME" ]; then
+    read -p "Surname:    " SURNAME
+fi
+if [ -z "$GIVEN" ]; then
+    read -p "Given Name: " GIVEN
+fi
+if [ -z "$PWHASH" ]; then
+    if [ -z "$PASSWORD" ]; then
+        read -s -p "Passowrd:    " PASSWORD
+        echo ""
+    fi
+    PW_HASH=$(slappasswd -s "$PASSWORD")
+fi
 
-# Convert the password entered to an OpenLDAP compatible hash
-PW_HASH=$(slappasswd -s "$NEW_PASSWORD")
 
 # Export all of the variables we've collected and use them for templating
 export BASE_DN USERNAME SURNAME GIVEN PW_HASH NEW_UID NEW_GID

@@ -1,5 +1,8 @@
 #! /bin/bash
 
+REQUIRED_PARAMS=()
+OPTIONAL_PARAMS=("BASE_DN")
+
 # Load configuration and LDAP library
 source ./config.sh
 source ./ldaplib.sh

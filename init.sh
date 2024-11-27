@@ -1,5 +1,8 @@
 #! /bin/bash
 
+REQUIRED_PARAMS=("LDAP_PASSWORD")
+OPTIONAL_PARAMS=("BASE_DN" "USER_LDIF_PATH" "GROUP_LDIF_PATH" "SERVICE_LDIF_PATH" "TEMPLATE_PATH")
+
 source ./config.sh
 source ./ldaplib.sh
 
@@ -61,13 +64,13 @@ for OU_NAME in "${ou_list[@]}"; do
         envsubst < "${TEMPLATE_FILE}" > "${temp_file}"
 
         # Only prompt for admin password if not already set
-        if [ -z "$admin_password" ]; then
-            read -s -p "OpenLDAP Admin Password: " admin_password
+        if [ -z "$LDAP_PASSWORD" ]; then
+            read -s -p "OpenLDAP Admin Password: " LDAP_PASSWORD
             echo ""
         fi
 
         # Import the new user into LDAP
-        ldapAdd "$temp_file" "$BASE_DN" "$admin_password"
+        ldapAdd "$temp_file" "$BASE_DN" "$LDAP_PASSWORD"
 
 
         if [ $? -ne 0 ]; then
@@ -102,13 +105,13 @@ for GROUPNAME in "${group_list[@]}"; do
         envsubst < "${TEMPLATE_FILE}" > "${GROUP_LDIF}"
 
         # Only prompt for admin password if not already set
-        if [ -z "$admin_password" ]; then
-            read -s -p "OpenLDAP Admin Password: " admin_password
+        if [ -z "$LDAP_PASSWORD" ]; then
+            read -s -p "OpenLDAP Admin Password: " LDAP_PASSWORD
             echo ""
         fi
 
         # Import the new group into LDAP
-        result=$(ldapAdd "$GROUP_LDIF" "$BASE_DN" "$admin_password")
+        result=$(ldapAdd "$GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
 
         # Check the result of the group addition
         if [ $? -ne 0 ]; then
@@ -145,13 +148,13 @@ for SERVICE_NAME in "${service_list[@]}"; do
         envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
         # Only prompt for admin password if not already set
-        if [ -z "$admin_password" ]; then
-            read -s -p "OpenLDAP Admin Password: " admin_password
+        if [ -z "$LDAP_PASSWORD" ]; then
+            read -s -p "OpenLDAP Admin Password: " LDAP_PASSWORD
             echo ""
         fi
 
         # Import the new user into LDAP
-        result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$admin_password")
+        result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
 
         # Check the result of the service addition
         if [ $? -ne 0 ]; then

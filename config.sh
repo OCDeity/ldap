@@ -1,10 +1,241 @@
 #!/bin/bash
 
+# Variables & defaults:
+BASE_DN=
+
+# Paths:
 TEMPLATE_PATH=./templates/
 USER_LDIF_PATH=./users/
 GROUP_LDIF_PATH=./groups/
 SERVICE_LDIF_PATH=./services/
-BASE_DN=
-#BASE_DN="dc=home,dc=arpa"
+
+# Name Related:
+USERNAME=
+SURNAME=
+GIVEN=
+SERVICE_NAME=
+GROUPNAME=
+OU_NAME=
+
+# Password Related:
+PASSWORD=
+PASSWORD_HASH=
+SERVICE_PASSWORD=
 SERVICE_PW_HASH="{SSHA}ecGlxH3B7fhSCC7GvEAIWYw8IN+eFI2C"
+LDAP_PASSWORD=
+
+# ID Number Related:
+NEW_UID=
+NEW_GID=
+
+
+
+
+function handle_usage {
+    echo ""
+    echo "Usage: $1 [options]"
+    echo "Required (may be prompted if not provided):"
+    if [ ${#REQUIRED_PARAMS[@]} -gt 0 ]; then
+        handle_show_options "${REQUIRED_PARAMS[@]}"
+    else
+        echo "  None"
+    fi
+    echo ""
+    echo "Optional:"
+    if [ ${#OPTIONAL_PARAMS[@]} -gt 0 ]; then
+        handle_show_options "${OPTIONAL_PARAMS[@]}"
+    else
+        echo "  None"
+    fi
+}
+
+function handle_show_options {
+    for item in "$@"; do
+        case $item in
+            "BASE_DN")
+                echo "  --base-dn <base dn>        The base DN to use for the ldap access."
+                ;;
+            "TEMPLATE_PATH")
+                echo "  --template-path <path>     The path to the template files."
+                ;;
+            "USER_LDIF_PATH")
+                echo "  --user-ldif-path <path>    The output path for user .ldif files."
+                ;;
+            "GROUP_LDIF_PATH")
+                echo "  --group-ldif-path <path>   The output path for group .ldif files."
+                ;;
+            "SERVICE_LDIF_PATH")
+                echo "  --service-ldif-path <path> The output path for service .ldif files."
+                ;;
+            "USERNAME")
+                echo "  --username <name>          The username for the user."
+                ;;
+            "SURNAME")
+                echo "  --surname <name>           The surname for the user."
+                ;;
+            "GIVEN")
+                echo "  --given <given>            The given name for the user."
+                ;;
+            "GROUPNAME")
+                echo "  --groupname <name>         The group name."
+                ;;
+            "SERVICE_NAME")
+                echo "  --service-name <name>      The service name."
+                ;;
+            "OU_NAME")
+                echo "  --ou <name>                The organizational unit's name."
+                ;;
+            "NEW_GID")
+                echo "  --new-gid <gid>            The new group ID."
+                ;;
+            "NEW_UID")
+                echo "  --new-uid <uid>            The new user ID."
+                ;;
+            "PASSWORD")
+                echo "  --password <pass>          The password for the given user."
+                echo "                             password-hash will supersede password."
+                ;;
+            "PW_HASH")
+                echo "  --password-hash <hash>     The password hash for the given user."
+                ;;
+            "SERVICE_PASSWORD")
+                echo "  --service-password <pass>  The password for the given service."
+                echo "                             service-pw-hash will supersede service-password."
+                ;;
+            "SERVICE_PW_HASH")
+                echo "  --service-pw-hash <hash>   The service password hash to use for the ldap access."
+                ;;
+            "LDAP_PASSWORD")
+                echo "  --ldap-password <pass>     The password for the ldap access."
+                ;;
+            *)
+                echo "Unknown option: $item"
+                ;;
+        esac
+    done
+}
+
+
+
+
+
+
+# Parse command line options
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+
+        # Base DN:
+        --base-dn)
+            BASE_DN="$2"
+            shift # past argument
+            shift # past value
+            ;;
+
+        # Paths:
+        --template-path)
+            TEMPLATE_PATH="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --user-ldif-path)
+            USER_LDIF_PATH="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --group-ldif-path)
+            GROUP_LDIF_PATH="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --service-ldif-path)
+            SERVICE_LDIF_PATH="$2"
+            shift # past argument
+            shift # past value
+            ;;
+
+
+        # Name Related:
+        --username)
+            USERNAME="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --surname)
+            SURNAME="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --given)
+            GIVEN="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --groupname)
+            GROUPNAME="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --service-name)
+            SERVICE_NAME="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --ou)
+            OU_NAME="$2"
+            shift # past argument
+            shift # past value
+            ;;
+
+        # ID Number Related:
+        --new-gid)
+            NEW_GID="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --new-uid)
+            NEW_UID="$2"
+            shift # past argument
+            shift # past value
+            ;;
+
+        # Password related:
+        --password)
+            PASSWORD="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --password-hash)
+            PW_HASH="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --service-password)
+            SERVICE_PASSWORD="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --service-pw-hash)
+            SERVICE_PW_HASH="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --ldap-password)
+            LDAP_PASSWORD="$2"
+            shift # past argument
+            shift # past value
+            ;;
+
+        --help)
+            handle_usage "$0" 
+            exit 0
+            ;;
+        *)
+            echo ""
+            echo "Unexpected parameter passed: $1"
+            handle_usage "$0"
+            exit 0
+            ;;
+    esac
+done
+
 

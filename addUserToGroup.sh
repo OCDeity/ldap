@@ -1,5 +1,8 @@
 #!/bin/bash
 
+REQUIRED_PARAMS=("USERNAME" "GROUPNAME" "LDAP_PASSWORD")
+OPTIONAL_PARAMS=("BASE_DN" "TEMPLATE_PATH")
+
 # Include our settings:
 source ./ldaplib.sh
 source ./config.sh
@@ -12,8 +15,12 @@ fi
 
 
 
-# Ask for the username
-read -p "Username: " USERNAME
+# Ask for the username if 
+if [ -z "$USERNAME" ]; then
+    read -p "Username: " USERNAME
+fi
+
+# Check to see if the user exists:
 result=$(ldapUserExists "$USERNAME" "$BASE_DN")
 if ! [ "$result" == "true" ]; then
     echo "The user ${USERNAME} was not found"
@@ -21,18 +28,22 @@ if ! [ "$result" == "true" ]; then
 fi
 
 
-# Ask for the group name
-read -p "Group: " group_name
-GROUP_DN=$(ldapGetGroupDN "$group_name" "$BASE_DN")
+# Ask for the group name if it's not already set:
+if [ -z "$GROUPNAME" ]; then
+    read -p "Group: " GROUPNAME
+fi
+
+# Get the group DN:
+GROUP_DN=$(ldapGetGroupDN "$GROUPNAME" "$BASE_DN")
 if ! [ -n "$GROUP_DN" ]; then
-    echo "The group \"$group_name\" was not found."
+    echo "The group \"$GROUPNAME\" was not found."
     exit 0
 fi
 
-
-result=$(ldapIsMember "$group_name" "$USERNAME" "$BASE_DN")
+# Check to see if the user is already a member of the group:
+result=$(ldapIsMember "$GROUPNAME" "$USERNAME" "$BASE_DN")
 if [ "$result" == "true" ]; then
-    echo "The user \"$USERNAME\" is already part of the group \"$group_name\""
+    echo "The user \"$USERNAME\" is already part of the group \"$GROUPNAME\""
     exit 0
 fi
 
@@ -46,4 +57,4 @@ TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/AddUserToGroup.txt")
 envsubst < "$TEMPLATE_FILE" > "$temp_file"
 
 # Attempt to execute the modification in the .ldiff file we just constructed:
-ldapModify "$temp_file" "$BASE_DN"
+ldapModify "$temp_file" "$BASE_DN" "$LDAP_PASSWORD"

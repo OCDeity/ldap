@@ -1,5 +1,8 @@
 #!/bin/bash
 
+REQUIRED_PARAMS=("USERNAME" "LDAP_PASSWORD")
+OPTIONAL_PARAMS=("BASE_DN")
+
 # Include the ldaplib.sh library
 source ./ldaplib.sh
 source ./config.sh
@@ -11,12 +14,14 @@ fi
 
 
 # Ask for the username
-read -p "User to DELETE: " USERNAME
+if [ -z "$USERNAME" ]; then
+    read -p "User to DELETE: " USERNAME
+fi
 
 # Check if user exists
 user_dn=$(ldapGetUserDN "$USERNAME" "$BASE_DN")
 if ! [ -n "$user_dn" ]; then
-	echo "User $USERNAME was not found."
+	echo "User \"$USERNAME\" was not found in \"$BASE_DN\"."
 	exit 1
 fi
 
@@ -28,13 +33,19 @@ if [ ${#user_groups[@]} -gt 0 ]; then
 	printf '%s\n' "${user_groups[@]}"
 fi
 
-read -s -p "LDAP Admin Password: " LDAP_PASSWORD
+
 
 # Remove the user from each group
 for group in "${user_groups[@]}"; do
 
     # Get the group's DN
     GROUP_DN=$(ldapGetGroupDN "$group" "$BASE_DN")  
+
+    # If we don't yet have the admin password, we'll ask for it.    
+    if [ -z "$LDAP_PASSWORD" ]; then
+        read -s -p "LDAP Admin Password: " LDAP_PASSWORD
+        echo ""
+    fi
 
     # Create a temporary file with a unique name
     temp_file=$(mktemp)
@@ -52,11 +63,26 @@ done
 user_group_dn=$(ldapsearch -x -LLL -b "$BASE_DN" "(&(objectClass=posixGroup)(cn=$USERNAME))" 2>/dev/null  | grep -E "^dn:" | head -1 | sed 's/dn: //')
 if [ -n "$user_group_dn" ]; then
     echo "Deleting group $USERNAME..."
+
+    # If we don't yet have the admin password, we'll ask for it.    
+    if [ -z "$LDAP_PASSWORD" ]; then
+        read -s -p "LDAP Admin Password: " LDAP_PASSWORD
+        echo ""
+    fi
+        
+
     ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$user_group_dn"
 fi
 
 
 # Delete the user
 echo "Deleting user $USERNAME..."
+
+# If we don't yet have the admin password, we'll ask for it.    
+if [ -z "$LDAP_PASSWORD" ]; then
+    read -s -p "LDAP Admin Password: " LDAP_PASSWORD
+    echo ""
+fi
+
 ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$user_dn"
 
