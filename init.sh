@@ -9,7 +9,7 @@ source ./ldaplib.sh
 ou_list=("groups" "users" "services")
 group_list=()
 service_list=()
-lxc_root_mapping="true"
+lxc_root_mapping="false"
 
 
 # Get the base DN if it's not already set
