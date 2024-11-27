@@ -13,6 +13,17 @@ if [ -z "$BASE_DN" ]; then
     BASE_DN=$(getBaseDN)
 fi
 
+# It is expected that the search domain will match the base DN.  
+# If not, we'll prompt the user before we continue.
+SEARCH_DOMAIN=$(getBaseDNfromSearchDomain)
+if [ "$SEARCH_DOMAIN" != "$BASE_DN" ]; then
+    read -p "WARNING:  Search domain ($SEARCH_DOMAIN) does not match base DN ($BASE_DN).  Continue? (y/n): " response
+    if [ "$response" != "y" ]; then
+        echo "Exiting..."
+        exit 1
+    fi  
+fi
+
 echo "Base DN: $BASE_DN"
 
 echo "Verifying Paths"

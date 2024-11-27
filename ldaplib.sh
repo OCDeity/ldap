@@ -41,6 +41,8 @@ function getBaseDNfromSearchDomain {
 #  None
 # ====================================
 function getBaseDN {
+
+	# Get the base DN from OpenLDAP
 	ldapsearch -x -s base -LLL -b "" namingContexts 2>/dev/null | grep -E "^namingContexts:" | sed 's/namingContexts: //g'
 }
 
