@@ -6,7 +6,7 @@
 # ====================================
 #  None
 # ====================================
-function getBaseDN {
+function getBaseDNfromSearchDomain {
     # This should get our search domain from the network settings:
     search_domain=$(grep ^search /etc/resolv.conf | cut -d' ' -f2-)
     if [ -z "$search_domain" ]; then 
@@ -34,6 +34,16 @@ function getBaseDN {
 
     echo $base_dn
 }
+
+# ====================================
+#  Parameters
+# ====================================
+#  None
+# ====================================
+function getBaseDN {
+	ldapsearch -x -s base -LLL -b "" namingContexts 2>/dev/null | grep -E "^namingContexts:" | sed 's/namingContexts: //g'
+}
+
 
 
 # ====================================
