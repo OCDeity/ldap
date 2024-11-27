@@ -1,0 +1,22 @@
+dn: cn=$LXC_SERVICE_NAME,ou=groups,$BASE_DN
+objectClass: top
+objectClass: posixGroup
+cn: $LXC_SERVICE_NAME
+gidNumber: 10$NEW_GID
+description: LXC mapping for $SERVICE_NAME
+
+dn: uid=$LXC_SERVICE_NAME,ou=services,$BASE_DN
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: $LXC_SERVICE_NAME
+sn: Service
+givenName: $LXC_SERVICE_NAME
+cn: $LXC_SERVICE_NAME
+displayName: $LXC_SERVICE_NAME
+uidNumber: 10$NEW_UID
+gidNumber: 10$NEW_GID
+userPassword: $SERVICE_PW_HASH
+homeDirectory: /srv/$SERVICE_NAME
+loginShell: /sbin/nologin
+gecos: LXC mapping for $SERVICE_NAME Account

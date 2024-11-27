@@ -1,7 +1,7 @@
 #! /bin/bash
 
 REQUIRED_PARAMS=("SERVICE_NAME" "LDAP_PASSWORD")
-OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
+OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "LXC_SERVICE" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
 
 source ./config.sh
 source ./ldaplib.sh
@@ -33,15 +33,6 @@ fi
 # Work out the path to the service .ldif
 SERVICE_LDIF=$(realpath "${SERVICE_LDIF_PATH}/${SERVICE_NAME}.ldif")
 
-# If an .ldif file with that name already exists, ask the user what to do:
-if [ -e "${SERVICE_LDIF}" ]; then
-    read -p "The file ${SERVICE_LDIF} exists.  Continue and Overwrite? (y/N)" response
-    response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
-    if ! [[ "$response" =~ ^(yes|y)$ ]]; then
-        echo "Aborting."
-        exit 0
-    fi
-fi
 
 # Get the next available UID.  We will use the same ID for the group.
 if [ -z "$NEW_UID" ]; then
@@ -65,6 +56,33 @@ export BASE_DN SERVICE_NAME SERVICE_PW_HASH NEW_UID NEW_GID
 TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/ServiceTemplate.txt")
 envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
+# If we don't yet have the admin password, we'll ask for it.
+if [ -z "$LDAP_PASSWORD" ]; then
+    read -s -p "LDAP Admin Password: " LDAP_PASSWORD
+    echo ""
+fi
+
 # Import the new user into LDAP
 ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD"
 
+
+
+LXC_SERVICE_NAME="lxc-$SERVICE_NAME"
+result=$(ldapUserExists "$LXC_SERVICE_NAME" "$BASE_DN")
+if [ "$result" == "true" ]; then
+    echo "The service $LXC_SERVICE_NAME was already found under '${BASE_DN}'."
+    exit 0
+fi
+
+
+
+if [ "$LXC_SERVICE" == "true" ]; then
+
+    # Export all of the variables we've collected and use them for templating
+    export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH NEW_UID NEW_GID
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/LxcServiceTemplate.txt")
+    envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
+
+    # Import the new user into LDAP
+    ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD"
+fi

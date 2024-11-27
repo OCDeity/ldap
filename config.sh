@@ -28,6 +28,9 @@ LDAP_PASSWORD=
 NEW_UID=
 NEW_GID=
 
+# Additional:
+LXC_SERVICE=
+
 
 
 
@@ -107,6 +110,10 @@ function handle_show_options {
                 ;;
             "LDAP_PASSWORD")
                 echo "  --ldap-password <pass>     The password for the ldap access."
+                ;;
+            "LXC_SERVICE")
+                echo "  --lxc-service              Create additional user and group for an LXC container."
+                echo "                             UID & GID +100000 will be used. Name will be lxc-<name>."
                 ;;
             *)
                 echo "Unknown option: $item"
@@ -223,6 +230,12 @@ while [[ "$#" -gt 0 ]]; do
             LDAP_PASSWORD="$2"
             shift # past argument
             shift # past value
+            ;;
+
+        # Additional:
+        --lxc-service)
+            LXC_SERVICE=true
+            shift # past argument
             ;;
 
         --help)

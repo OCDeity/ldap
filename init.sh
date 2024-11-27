@@ -9,6 +9,7 @@ source ./ldaplib.sh
 ou_list=("groups" "users" "services")
 group_list=()
 service_list=()
+lxc_root_mapping="true"
 
 
 # Get the base DN if it's not already set
@@ -169,3 +170,45 @@ for SERVICE_NAME in "${service_list[@]}"; do
 done
 
 
+
+if [ "$lxc_root_mapping" == "true" ]; then
+
+    echo "Creating LXC Root Mapping"
+
+    SERVICE_NAME="root"
+    LXC_SERVICE_NAME="lxc-root"
+    SERVICE_PW_HASH="{SSHA}JRmjUSmev0sqdnRJpVd64gtfu6Rkyc7x"
+    NEW_UID="0000"
+    NEW_GID="0000"
+
+    result=$(ldapUserExists "$LXC_SERVICE_NAME" "$BASE_DN")
+    if [ "$result" != "true" ]; then
+
+        # Work out the path to the service .ldif
+        SERVICE_LDIF=$(realpath "${SERVICE_LDIF_PATH}/${LXC_SERVICE_NAME}.ldif")
+
+        # Export all of the variables we've collected and use them for templating
+        export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH NEW_UID NEW_GID
+        TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/LxcServiceTemplate.txt")
+        envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
+
+        # Only prompt for admin password if not already set
+        if [ -z "$LDAP_PASSWORD" ]; then
+            read -s -p "OpenLDAP Admin Password: " LDAP_PASSWORD
+            echo ""
+        fi
+
+        # Import the new user into LDAP
+        result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
+        
+        # Check the result of the service addition
+        if [ $? -ne 0 ]; then
+            echo " x FAILED:  $LXC_SERVICE_NAME"
+            echo "   RESULT:  $result"
+        else 
+            echo " + Created: $LXC_SERVICE_NAME"
+        fi
+    else
+        echo " - Exists:  $LXC_SERVICE_NAME"
+    fi
+fi
