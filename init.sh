@@ -13,18 +13,30 @@ if [ -z "$BASE_DN" ]; then
     BASE_DN=$(getBaseDN)
 fi
 
+echo "Base DN: $BASE_DN"
+
+echo "Verifying Paths"
 # Create the directories if they don't exist
 path_list=("$TEMPLATE_PATH" "$USER_LDIF_PATH" "$GROUP_LDIF_PATH" "$SERVICE_LDIF_PATH")
-for current_path in "${path_list}"; do
+for current_path in "${path_list[@]}"; do
     if [ ! -d "$current_path" ]; then
-        echo "Creating directory: $current_path"
+
+        # Create the directory
         mkdir -p "$current_path"
+        if [ $? -ne 0 ]; then
+            echo " x FAILED:  $current_path"
+        else
+            echo " + Created: $current_path"
+        fi
+    else
+        echo " - Exists:  $current_path"
     fi
 done
 
+echo "Creating Organizational Units"
 
 # Create the OU's if they don't exist
-for OU_NAME in "${ou_list}"; do
+for OU_NAME in "${ou_list[@]}"; do
 
     result=$(ldapOUExists "$OU_NAME" "$BASE_DN")
     if [ "$result" != "true" ]; then
@@ -45,12 +57,23 @@ for OU_NAME in "${ou_list}"; do
 
         # Import the new user into LDAP
         ldapAdd "$temp_file" "$BASE_DN" "$admin_password"
+
+
+        if [ $? -ne 0 ]; then
+            echo " x FAILED:  $OU_NAME"
+            echo "   RESULT:  $result"
+        else 
+            echo " + Created: $OU_NAME"
+        fi
+    else
+        echo " - Exists:  $OU_NAME"
     fi
 done
 
+echo "Creating Groups"
 
 # Create the groups in group_list
-for GROUPNAME in "${group_list}"; do
+for GROUPNAME in "${group_list[@]}"; do
 
     # Check to see if the group name already exists:
     result=$(ldapGroupExists "$GROUPNAME" "$BASE_DN")
@@ -74,13 +97,25 @@ for GROUPNAME in "${group_list}"; do
         fi
 
         # Import the new group into LDAP
-        ldapAdd "$GROUP_LDIF" "$BASE_DN" "$admin_password"
+        result=$(ldapAdd "$GROUP_LDIF" "$BASE_DN" "$admin_password")
+
+        # Check the result of the group addition
+        if [ $? -ne 0 ]; then
+            echo " x FAILED:  $GROUPNAME"
+            echo "   RESULT: $result"
+        else 
+            echo " + Created: $GROUPNAME"
+        fi
+    else
+        echo " - Exists:  $GROUPNAME"
     fi
 done
 
 
+echo "Creating Services"
+
 # Create the services in service_list
-for SERVICE_NAME in "${service_list}"; do
+for SERVICE_NAME in "${service_list[@]}"; do
 
     # Check if the service already exists
     result=$(ldapUserExists "$SERVICE_NAME" "$BASE_DN")
@@ -105,7 +140,17 @@ for SERVICE_NAME in "${service_list}"; do
         fi
 
         # Import the new user into LDAP
-        ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$admin_password"
+        result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$admin_password")
+
+        # Check the result of the service addition
+        if [ $? -ne 0 ]; then
+            echo " x FAILED:  $SERVICE_NAME"
+            echo "   RESULT:  $result"
+        else 
+            echo " + Created: $SERVICE_NAME"
+        fi
+    else
+        echo " - Exists:  $SERVICE_NAME"
     fi
 done
 
