@@ -204,21 +204,37 @@ while [[ "$#" -gt 0 ]]; do
         # ID Number Related:
         --new-gid)
             NEW_GID="$2"
+            if ! [[ "$NEW_GID" =~ ^[0-9]+$ ]]; then
+                echo "The new-gid parameter must be a number."
+                exit 1
+            fi
             shift # past argument
             shift # past value
             ;;
         --new-uid)
             NEW_UID="$2"
+            if ! [[ "$NEW_UID" =~ ^[0-9]+$ ]]; then
+                echo "The new-uid parameter must be a number."
+                exit 1
+            fi
             shift # past argument
             shift # past value
             ;;
         --lxc-uid)
             LXC_UID="$2"
+            if ! [[ "$LXC_UID" =~ ^[0-9]+$ ]]; then
+                echo "The lxc-uid parameter must be a number."
+                exit 1
+            fi
             shift # past argument
             shift # past value
             ;;  
         --lxc-gid)
             LXC_GID="$2"
+            if ! [[ "$LXC_GID" =~ ^[0-9]+$ ]]; then
+                echo "The lxc-gid parameter must be a number."
+                exit 1
+            fi
             shift # past argument
             shift # past value
             ;;
