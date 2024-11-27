@@ -6,7 +6,7 @@
 # ====================================
 #  None
 # ====================================
-function getBaseDNfromSearchDomain {
+getBaseDNfromSearchDomain() {
     # This should get our search domain from the network settings:
     search_domain=$(grep ^search /etc/resolv.conf | cut -d' ' -f2-)
     if [ -z "$search_domain" ]; then 
@@ -40,7 +40,7 @@ function getBaseDNfromSearchDomain {
 # ====================================
 #  None
 # ====================================
-function getBaseDN {
+getBaseDN() {
 
 	# Get the base DN from OpenLDAP
 	ldapsearch -x -s base -LLL -b "" namingContexts 2>/dev/null | grep -E "^namingContexts:" | sed 's/namingContexts: //g'
@@ -57,7 +57,7 @@ function getBaseDN {
 #  3 - LDAP Admin Password (Optional)
 #      If omitted, the user is asked
 # ====================================
-function ldapAdd {
+ldapAdd() {
 
 	local ldif_file=$1
 	local base_dn=$2
@@ -97,7 +97,7 @@ function ldapAdd {
 #  3 - LDAP Admin Password (Optional)
 #      If omitted, the user is asked
 # =====================================
-function ldapModify {
+ldapModify() {
 
 	local ldif_file=$1
 	local base_dn=$2
@@ -133,11 +133,41 @@ function ldapModify {
 # ====================================
 #  Parameters
 # ====================================
+#  1 - DN to remove
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+#  3 - LDAP Admin Password (Optional)
+#      If omitted, the user is asked
+# ====================================
+ldapDelete() {
+
+	local remove_dn=$1
+	local base_dn=$2
+	local admin_password=$3
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	# If the admin_password was not passed, ask for it:
+	if ! [ -n "$admin_password" ]; then
+        read -s -p "OpenLDAP Admin Password: " admin_password
+		echo ""
+    fi
+
+	ldapdelete -x -D "cn=admin,$base_dn" -w "$admin_password" "$remove_dn"
+}
+
+
+# ====================================
+#  Parameters
+# ====================================
 #  1 - Username to search for
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapUserExists {
+ldapUserExists() {
 
 	local username=$1
 	local base_dn=$2
@@ -170,7 +200,7 @@ function ldapUserExists {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetGroupDN {
+ldapGetGroupDN() {
 	local group_name=$1
 	local base_dn=$2
 
@@ -197,7 +227,7 @@ function ldapGetGroupDN {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGroupExists {
+ldapGroupExists() {
 
 	# Get the parameters
 	local group_name=$1
@@ -230,7 +260,7 @@ function ldapGroupExists {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetGroupDN {
+ldapGetGroupDN() {
 	local group_name=$1
 	local base_dn=$2
 
@@ -258,7 +288,7 @@ function ldapGetGroupDN {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetUserDN {
+ldapGetUserDN() {
 	local username=$1
 	local base_dn=$2
 
@@ -286,7 +316,7 @@ function ldapGetUserDN {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # =====================================
-function ldapGetMembers {
+ldapGetMembers() {
 	local group_name=$1
 	local base_dn=$2
 
@@ -313,7 +343,7 @@ function ldapGetMembers {
 #  3 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ======================================
-function ldapIsMember {
+ldapIsMember() {
 	local group_name=$1
 	local username=$2
 	local base_dn=$3
@@ -351,7 +381,7 @@ function ldapIsMember {
 #  1 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetNextUID {
+ldapGetNextUID() {
 
 	local base_dn=$1
 
@@ -378,7 +408,7 @@ function ldapGetNextUID {
 #  1 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================	
-function ldapGetNextServiceUID {
+ldapGetNextServiceUID() {
 
 	# If the base_dn was passed, use it.
 	local base_dn=$1
@@ -407,7 +437,7 @@ function ldapGetNextServiceUID {
 #  1 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetNextGID {
+ldapGetNextGID() {
 
 	local base_dn=$1
 
@@ -436,7 +466,7 @@ function ldapGetNextGID {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ======================================
-function ldapGetUserGroups {
+ldapGetUserGroups() {
 
 	local username=$1
 	local base_dn=$2	
@@ -463,7 +493,7 @@ function ldapGetUserGroups {
 #  1 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetUsers {
+ldapGetUsers() {
 
 	local base_dn=$1
 
@@ -483,7 +513,7 @@ function ldapGetUsers {
 #  1 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetGroups {
+ldapGetGroups() {
 
 	local base_dn=$1
 
@@ -502,7 +532,7 @@ function ldapGetGroups {
 #  1 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
-function ldapGetOUs {
+ldapGetOUs() {
 
 	local base_dn=$1
 
@@ -522,7 +552,7 @@ function ldapGetOUs {
 #  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================	
-function ldapOUExists {
+ldapOUExists() {
 
 	local ou_name=$1
 	local base_dn=$2
@@ -547,7 +577,7 @@ function ldapOUExists {
 	fi
 }
 
-function ldapGetOUMembers {
+ldapGetOUMembers() {
 	local ou_name=$1
 	local base_dn=$2
 
@@ -563,11 +593,4 @@ function ldapGetOUMembers {
 	fi
 
 	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(ou=$ou_name))" ou 2>/dev/null | grep -E "^ou:" | sed 's/ou: //g'	
-}
-
-
-function ldapGetServices {
-	local base_dn=$1
-
-	ldapGetOUMembers "services" "$base_dn"
 }

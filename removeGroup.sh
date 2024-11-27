@@ -27,4 +27,4 @@ if [ -z "$LDAP_PASSWORD" ]; then
     echo ""
 fi
 
-ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$GROUP_DN"
+ldapDelete "$GROUP_DN" "$BASE_DN" "$LDAP_PASSWORD"

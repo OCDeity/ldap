@@ -71,7 +71,7 @@ if [ -n "$user_group_dn" ]; then
     fi
         
 
-    ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$user_group_dn"
+    ldapDelete "$user_group_dn" "$BASE_DN" "$LDAP_PASSWORD"
 fi
 
 
@@ -84,7 +84,7 @@ if [ -z "$LDAP_PASSWORD" ]; then
     echo ""
 fi
 
-ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$user_dn"
+ldapDelete "$user_dn" "$BASE_DN" "$LDAP_PASSWORD"
 
 
 # Check if an LXC service mapping exists
@@ -155,7 +155,7 @@ if [ -n "$user_dn" ]; then
                 echo ""
             fi
             
-            ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$user_group_dn"
+            ldapDelete "$user_group_dn" "$BASE_DN" "$LDAP_PASSWORD"
         fi
 
 
@@ -168,7 +168,7 @@ if [ -n "$user_dn" ]; then
             echo ""
         fi
 
-        ldapdelete -x -D "cn=admin,$BASE_DN" -w "$LDAP_PASSWORD" "$user_dn"
+        ldapDelete "$user_dn" "$BASE_DN" "$LDAP_PASSWORD"
 
     fi
 fi
