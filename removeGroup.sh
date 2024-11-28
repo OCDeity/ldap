@@ -3,8 +3,8 @@
 REQUIRED_PARAMS=("GROUPNAME" "LDAP_PASSWORD")
 OPTIONAL_PARAMS=("BASE_DN")
 
-source ./config.sh
 source ./ldaplib.sh
+source ./config.sh
 
 
 # Get the base DN if it's not already set

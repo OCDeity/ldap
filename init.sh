@@ -3,8 +3,8 @@
 REQUIRED_PARAMS=("LDAP_PASSWORD")
 OPTIONAL_PARAMS=("BASE_DN" "USER_LDIF_PATH" "GROUP_LDIF_PATH" "SERVICE_LDIF_PATH" "TEMPLATE_PATH")
 
-source ./config.sh
 source ./ldaplib.sh
+source ./config.sh
 
 ou_list=("groups" "users" "services")
 group_list=()

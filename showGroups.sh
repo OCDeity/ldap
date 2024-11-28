@@ -4,8 +4,8 @@ REQUIRED_PARAMS=()
 OPTIONAL_PARAMS=("BASE_DN")
 
 # Load configuration and LDAP library
-source ./config.sh
 source ./ldaplib.sh
+source ./config.sh
 
 # Get the base DN if it's not already set
 if [ -z "$BASE_DN" ]; then

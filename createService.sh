@@ -3,8 +3,8 @@
 REQUIRED_PARAMS=("SERVICE_NAME" "LDAP_PASSWORD")
 OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "LXC_SERVICE" "LXC_UID" "LXC_GID" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
 
-source ./config.sh
 source ./ldaplib.sh
+source ./config.sh
 
 # Make sure that the output path exists..
 if [ ! -d "${SERVICE_LDIF_PATH}" ]; then
