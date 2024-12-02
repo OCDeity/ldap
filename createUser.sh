@@ -157,7 +157,8 @@ else
         # Note that we could veify that the existing hash 
         # is what the caller provided.  That requires extra
         # permissions.  We'll skip it, at least for now.
-        echo "  PW_HASH: (unchanged)"
+        # It may be wise to skip it forever.
+        echo "  PW_HASH: (not verified)"
     fi
 fi
 
@@ -172,9 +173,38 @@ fi
 
 if [ "$result" != "true" ]; then
     echo "Creating group ${USERNAME}"
+
+    # The group name is the same as the username:
+    GROUPNAME="$USERNAME"
+
+    echo "  GID: ${NEW_GID}"
+
+    # Get the LDAP Admin Password if we don't already have it.
+    getLDAPPassword LDAP_PASSWORD
+
+    # Get the path to the user group .ldif
+    USER_GROUP_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}-group.ldif")
+
+
+    # Exporting variables is necessary for the envsubst command to work
+    export BASE_DN GROUPNAME NEW_GID
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/GroupTemplate.txt")
+    envsubst < "${TEMPLATE_FILE}" > "${USER_GROUP_LDIF}"
+
+    # Import the new user group into LDAP
+    resultlt=$(ldapAdd "$USER_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        echo "Failed to create group ${USERNAME}"
+        echo "$result"
+        exit 1
+    fi
+    echo "  Created group ${USERNAME}"
+    
 else
     echo "Group ${USERNAME} exists"
 
+    # The user's group exists..  we need to make sure that
+    # it has a GID that matches that of the user.
     result=$(ldapGetGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
     if [ $? -ne 0 ]; then
         echo "ERROR: Failed to get group ID for ${USERNAME}"
@@ -193,38 +223,3 @@ else
     echo "  GID: ${NEW_GID}"
 fi
 
-
-exit 0
-
-# ===============================================
-#
-#   TODO: Handle Group!
-#
-# ===============================================
-
-USER_GROUP_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}-group.ldif")
-
-
-# In this particular case, the group name is the same as the username:
-GROUPNAME="${USERNAME}"
-result=$(ldapGroupExists "$GROUPNAME" "$BASE_DN")
-if [ "${result}" == "true" ]; then
-    echo "The group ${GROUPNAME} already exists under '${BASE_DN}'."
-    echo "Either remove the group ${GROUPNAME} first or modify it instead."
-    exit 0
-fi
-
-
-
-
-
-
-# Create the user's group!
-
-# Exporting variables is necessary for the envsubst command to work
-export BASE_DN GROUPNAME NEW_GID
-TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/GroupTemplate.txt")
-envsubst < "${TEMPLATE_FILE}" > "${USER_GROUP_LDIF}"
-
-# Import the new user group into LDAP
-ldapAdd "$USER_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD"
