@@ -27,13 +27,15 @@ if [ -z "$USERNAME" ]; then
     read -p "Username: " USERNAME
 fi
 
-# Work out the path to the user .ldif
-USER_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}.ldif")
-USER_GROUP_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}-group.ldif")
 
 result=$(ldapUserExists "$USERNAME" "$BASE_DN")
 if [ "$result" != "true" ]; then
     echo "Creating user ${USERNAME}"
+
+
+    # Work out the path to the user .ldif
+    USER_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}.ldif")
+
 
     # Get the next available UID if it's not already set:   
     if [ -z "$NEW_UID" ]; then
@@ -45,20 +47,39 @@ if [ "$result" != "true" ]; then
         exit 1
     fi
 
+    # If not set by the caller, use the UID as the GID:
     if [ -z "$NEW_GID" ]; then
         NEW_GID="$NEW_UID"
     fi
+
+    # We've got a group ID.  Check to see if it exists. 
+    # If it does, that may be OK.  We need to verify 
+    # that the username and that group name match.
     result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
     if [ "$result" == "true" ]; then
-        echo "ERROR: Group ID ${NEW_GID} already exists"
-        exit 1
+
+        FOUND_GROUP_NAME=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to get group name for ID ${NEW_GID}"
+            exit 1
+        fi
+
+        if [ "$FOUND_GROUP_NAME" != "$USERNAME" ]; then
+            echo "ERROR: Group ID ${NEW_GID} already exists"
+            echo "  Expected: ${USERNAME}"
+            echo "  Found:    ${FOUND_GROUP_NAME}"
+            exit 1
+        fi
     fi
 
+
+    # We should be all good on UID & GID.  Report them:
     echo "  UID: ${NEW_UID}"
     echo "  GID: ${NEW_GID}"
 
+
     # If we've no password hash, ask for the pw & hash it.
-    if [ -z "$PWHASH" ]; then
+    if [ -z "$PW_HASH" ]; then
         read -s -p "  Passowrd: " PASSWORD
 
         # Clear the line.  Note we don't really care if the 
@@ -68,7 +89,6 @@ if [ "$result" != "true" ]; then
         # In the end, this is what we really needed.
         PW_HASH=$(slappasswd -s "$PASSWORD")
     fi
-
     echo "  PW_HASH: ${PW_HASH}"
 
 
@@ -91,51 +111,98 @@ if [ "$result" != "true" ]; then
     echo "  Created user ${USERNAME}"
 else
     echo "User ${USERNAME} exists"
-    READ_UID=$(ldapGetUserID "$USERNAME" "$BASE_DN")
+    result=$(ldapGetUserID "$USERNAME" "$BASE_DN" 2>/dev/null)
     if [ $? -ne 0 ]; then
         echo "ERROR: Failed to get user ID for ${USERNAME}"
+        echo "$result"
         exit 1
     fi
-    if [ -z "$NEW_UID" ]; then
-        NEW_UID="$READ_UID"
-    else
-        if [ "$READ_UID" != "$NEW_UID" ]; then
+
+    # If the caller set a new UID, make sure it matches
+    # what we read from LDAP.
+    if ! [ -z "$NEW_UID" ]; then
+        if [ "$result" != "$NEW_UID" ]; then
             echo "ERROR: User ID mismatch for ${USERNAME}"
             echo "  Expected: ${NEW_UID}"
-            echo "  Read:     ${READ_UID}"
+            echo "  Read:     ${result}"
             exit 1
         fi
     fi
+    NEW_UID="$result"
     echo "  UID: ${NEW_UID}"
 
-    READ_GID=$(ldapGetUserGroupID "$USERNAME" "$BASE_DN")
+    
+    # Now for the group ID.  See what is set on the LDAP user.
+    result=$(ldapGetUserGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
     if [ $? -ne 0 ]; then
         echo "ERROR: Failed to get group ID for ${USERNAME}"
+        echo "$result"
         exit 1
     fi
-    if [ -z "$NEW_GID" ]; then
-        NEW_GID="$READ_GID"
-    else
-        if [ "$READ_GID" != "$NEW_GID" ]; then
+
+    # If the caller set a new GID, make sure it matches
+    # what we read from LDAP.
+    if ! [ -z "$NEW_GID" ]; then
+        if [ "$result" != "$NEW_GID" ]; then
             echo "ERROR: Group ID mismatch for ${USERNAME}"
             echo "  Expected: ${NEW_GID}"
-            echo "  Read:     ${READ_GID}"
+            echo "  Found:    ${result}"
             exit 1
         fi
     fi
+    NEW_GID="$result"
+    echo "  GID: ${NEW_GID}"
+
+    if ! [ -z "$PW_HASH" ]; then
+        # Note that we could veify that the existing hash 
+        # is what the caller provided.  That requires extra
+        # permissions.  We'll skip it, at least for now.
+        echo "  PW_HASH: (unchanged)"
+    fi
+fi
+
+
+# Check to see if the user group exists.
+result=$(ldapGroupExists "$USERNAME" "$BASE_DN" 2>/dev/null)
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to check if group ${USERNAME} exists"
+    echo "$result"
+    exit 1
+fi
+
+if [ "$result" != "true" ]; then
+    echo "Creating group ${USERNAME}"
+else
+    echo "Group ${USERNAME} exists"
+
+    result=$(ldapGetGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to get group ID for ${USERNAME}"
+        echo "$result"
+        exit 1
+    fi
+
+    # Make sure that the group ID matches our user's GID.
+    if [ "$result" != "$NEW_GID" ]; then
+        echo "ERROR: Group ID mismatch for ${USERNAME}"
+        echo "  Expected: ${NEW_GID}"
+        echo "  Found:    ${result}"
+        exit 1
+    fi
+
     echo "  GID: ${NEW_GID}"
 fi
 
-exit 0
 
+exit 0
 
 # ===============================================
 #
-#   TODO: Make sure comments are good ^^
 #   TODO: Handle Group!
 #
 # ===============================================
 
+USER_GROUP_LDIF=$(realpath "${USER_LDIF_PATH}/${USERNAME}-group.ldif")
 
 
 # In this particular case, the group name is the same as the username:
