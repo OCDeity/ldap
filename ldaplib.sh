@@ -47,6 +47,22 @@ getBaseDN() {
 }
 
 
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Variable to store the password
+#     NOTE: Do not dereference with $
+# ====================================
+getLDAPPassword() {
+	local -n local_password=$1
+    if [ -z "$local_password" ]; then
+        read -s -p "OpenLDAP Admin Password: " local_password
+		
+		# Clear the line
+        echo -ne "\r                          \r"
+    fi
+}
+
 
 # ====================================
 #  Parameters
@@ -186,6 +202,138 @@ ldapUserExists() {
 	# Look for a posixAccount entry for the user:
 	result=$(ldapsearch -x -LLL -b "${base_dn}" "(&(objectClass=posixAccount)(uid=${username}))" dn 2>/dev/null | grep -E "^dn:" | head -1 | sed 's/dn: //')
 	if [ -n "${result}" ]; then
+		echo true
+	else
+		echo false
+	fi
+}
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Username to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetUserID() {
+	local username=$1
+	local base_dn=$2
+
+	# Make sure we have a username
+	if ! [ -n "$username" ]; then
+		echo "Expected a username as the first parameter."
+		exit 1
+	fi
+
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(uid=$username))" uidNumber 2>/dev/null | grep -E "^uidNumber:" | head -1 | sed 's/uidNumber: //'
+}
+
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Username to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetUserGroupID() {
+	local username=$1
+	local base_dn=$2
+
+	# Make sure we have a username
+	if ! [ -n "$username" ]; then
+		echo "Expected a username as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(uid=$username))" gidNumber 2>/dev/null | grep -E "^gidNumber:" | head -1 | sed 's/gidNumber: //'
+}
+
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Group Name to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetGroupID() {
+	local group_name=$1
+	local base_dn=$2
+
+	# Make sure we have a group name
+	if ! [ -n "$group_name" ]; then
+		echo "Expected a group name as the first parameter."
+		exit 1
+	fi
+
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)(cn=$group_name))" gidNumber 2>/dev/null | grep -E "^gidNumber:" | head -1 | sed 's/gidNumber: //'
+}	
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - User ID to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapUserIdExists() {
+	local user_id=$1
+	local base_dn=$2
+
+	# Make sure we have a user_id
+	if ! [ -n "$user_id" ]; then
+		echo "Expected a user ID as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	result=$(ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(uidNumber=$user_id))" uidNumber 2>/dev/null | grep -E "^uidNumber:" | head -1 | sed 's/uidNumber: //')
+	if [ -n "$result" ]; then
+		echo true
+	else
+		echo false
+	fi
+}
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Group ID to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGroupIdExists() {
+	local group_id=$1
+	local base_dn=$2
+
+	# Make sure we have a group_id
+	if ! [ -n "$group_id" ]; then
+		echo "Expected a group ID as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	result=$(ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)(gidNumber=$group_id))" gidNumber 2>/dev/null | grep -E "^gidNumber:" | head -1 | sed 's/gidNumber: //')
+	if [ -n "$result" ]; then
 		echo true
 	else
 		echo false
@@ -391,8 +539,9 @@ ldapGetNextUID() {
 	fi
 
 	# Default first user ID is 2000.  We'll take it or the greatest we found in ldap+1
+	# NOTE:  Apparently the comparison does not support <, so <= is required.
 	NEW_UID=2000
-	FOUND_UID=$(ldapsearch -x -LLL -b "$base_dn" "(objectClass=posixAccount)" uidNumber | grep -E "^uidNumber:" | sort -n -r | head -1 | sed 's/uidNumber: //')
+	FOUND_UID=$(ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(uidNumber>=2000)(uidNumber<=2999))" uidNumber | grep -E "^uidNumber:" | sort -n -r | head -1 | sed 's/uidNumber: //')
 	if [[ $FOUND_UID =~ ^[0-9]+$ ]]; then
 		if [ "$FOUND_UID" -ge "$NEW_UID" ]; then
 			NEW_UID=$((FOUND_UID + 1))
@@ -419,8 +568,9 @@ ldapGetNextServiceUID() {
 	fi
 
 	# Default first service ID is 3000.  We'll take it or the greatest we found in ldap+1
+	# NOTE:  Apparently the comparison does not support <, so <= is required.
 	NEW_UID=3000
-	FOUND_UID=$(ldapsearch -x -LLL -b "$base_dn" "(objectClass=posixAccount)" uidNumber | grep -E "^uidNumber:" | sort -n -r | head -1 | sed 's/uidNumber: //')
+	FOUND_UID=$(ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(uidNumber>=3000)(uidNumber<=3999))" uidNumber | grep -E "^uidNumber:" | sort -n -r | head -1 | sed 's/uidNumber: //')
 	if [[ $FOUND_UID =~ ^[0-9]+$ ]]; then
 		if [ "$FOUND_UID" -ge "$NEW_UID" ]; then
 			NEW_UID=$((FOUND_UID + 1))
@@ -447,8 +597,9 @@ ldapGetNextGID() {
 	fi
 
 	# Default first group ID is 1000.  We'll take it or the greatest we found in ldap+1
+	# NOTE:  Apparently the comparison does not support <, so <= is required.
 	NEW_GID=1000
-	FOUND_GID=$(ldapsearch -x -LLL -b "$base_dn" "(objectClass=posixGroup)" gidNumber | grep -E "^gidNumber:" | sort -n -r | head -1 | sed 's/gidNumber: //')
+	FOUND_GID=$(ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)(gidNumber>=1000)(gidNumber<=1999))" gidNumber | grep -E "^gidNumber:" | sort -n -r | head -1 | sed 's/gidNumber: //')
 	if [[ $FOUND_GID =~ ^[0-9]+$ ]]; then
 		if [ "$FOUND_GID" -ge "$NEW_GID" ]; then
 			NEW_GID=$((FOUND_GID + 1))

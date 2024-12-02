@@ -11,9 +11,7 @@ SERVICE_LDIF_PATH=./services/
 
 # Name Related:
 USERNAME=
-SURNAME=
-GIVEN=
-SERVICE_NAME=
+SERVICENAME=
 GROUPNAME=
 OU_NAME=
 
@@ -29,9 +27,6 @@ NEW_UID=
 NEW_GID=
 LXC_UID=
 LXC_GID=
-
-# Additional:
-LXC_SERVICE=
 
 
 
@@ -75,17 +70,11 @@ function handle_show_options {
             "USERNAME")
                 echo "  --username <name>          The username for the user."
                 ;;
-            "SURNAME")
-                echo "  --surname <name>           The surname for the user."
-                ;;
-            "GIVEN")
-                echo "  --given <given>            The given name for the user."
-                ;;
             "GROUPNAME")
                 echo "  --groupname <name>         The group name."
                 ;;
-            "SERVICE_NAME")
-                echo "  --service-name <name>      The service name."
+            "SERVICENAME")
+                echo "  --servicename <name>       The service name."
                 ;;
             "OU_NAME")
                 echo "  --ou <name>                The organizational unit's name."
@@ -118,10 +107,6 @@ function handle_show_options {
                 ;;
             "LDAP_PASSWORD")
                 echo "  --ldap-password <pass>     The password for the ldap access."
-                ;;
-            "LXC_SERVICE")
-                echo "  --lxc-service              Create additional user and group for an LXC container."
-                echo "                             UID & GID +100000 will be used. Name will be lxc-<name>."
                 ;;
             *)
                 echo "Unknown option: $item"
@@ -175,23 +160,13 @@ while [[ "$#" -gt 0 ]]; do
             shift # past argument
             shift # past value
             ;;
-        --surname)
-            SURNAME="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --given)
-            GIVEN="$2"
-            shift # past argument
-            shift # past value
-            ;;
         --groupname)
             GROUPNAME="$2"
             shift # past argument
             shift # past value
             ;;
-        --service-name)
-            SERVICE_NAME="$2"
+        --servicename)
+            SERVICENAME="$2"
             shift # past argument
             shift # past value
             ;;
@@ -264,12 +239,6 @@ while [[ "$#" -gt 0 ]]; do
             LDAP_PASSWORD="$2"
             shift # past argument
             shift # past value
-            ;;
-
-        # Additional:
-        --lxc-service)
-            LXC_SERVICE=true
-            shift # past argument
             ;;
 
         --help)

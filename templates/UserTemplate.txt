@@ -1,22 +1,10 @@
-dn: cn=$USERNAME,ou=groups,$BASE_DN
-objectClass: top
-objectClass: posixGroup
-cn: $USERNAME
-gidNumber: $NEW_GID
-description: $USERNAME User Group
-
 dn: uid=$USERNAME,ou=users,$BASE_DN
-objectClass: inetOrgPerson
+objectClass: account
 objectClass: posixAccount
-objectClass: shadowAccount
+cn: $USERNAME user
 uid: $USERNAME
-sn: $SURNAME
-givenName: $GIVEN
-cn: $GIVEN $SURNAME
-displayName: $GIVEN $SURNAME
 uidNumber: $NEW_UID
 gidNumber: $NEW_GID
-userPassword: $PW_HASH
 homeDirectory: /home/$USERNAME
 loginShell: /bin/bash
-gecos: $GIVEN $SURNAME
+userPassword: $PW_HASH
