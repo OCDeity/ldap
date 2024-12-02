@@ -16,7 +16,6 @@ GROUPNAME=
 OU_NAME=
 
 # Password Related:
-PASSWORD=
 PASSWORD_HASH=
 SERVICE_PASSWORD=
 SERVICE_PW_HASH="{SSHA}ecGlxH3B7fhSCC7GvEAIWYw8IN+eFI2C"
@@ -90,10 +89,6 @@ function handle_show_options {
                 ;;
             "LXC_GID")
                 echo "  --lxc-gid <gid>            The group ID for the LXC service mapping."
-                ;;
-            "PASSWORD")
-                echo "  --password <pass>          The password for the given user."
-                echo "                             password-hash will supersede password."
                 ;;
             "PW_HASH")
                 echo "  --password-hash <hash>     The password hash for the given user."
@@ -215,11 +210,6 @@ while [[ "$#" -gt 0 ]]; do
             ;;
 
         # Password related:
-        --password)
-            PASSWORD="$2"
-            shift # past argument
-            shift # past value
-            ;;
         --password-hash)
             PW_HASH="$2"
             shift # past argument

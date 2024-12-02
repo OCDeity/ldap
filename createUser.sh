@@ -1,7 +1,7 @@
 #!/bin/bash
 
 REQUIRED_PARAMS=("USERNAME" "PW_HASH" "LDAP_PASSWORD")
-OPTIONAL_PARAMS=("BASE_DN"  "NEW_UID" "NEW_GID" "PASSWORD" "TEMPLATE_PATH" "USER_LDIF_PATH")
+OPTIONAL_PARAMS=("BASE_DN"  "NEW_UID" "NEW_GID" "TEMPLATE_PATH" "USER_LDIF_PATH")
 
 # Include our settings:
 source ./ldaplib.sh
@@ -57,17 +57,13 @@ if [ "$result" != "true" ]; then
     echo "  UID: ${NEW_UID}"
     echo "  GID: ${NEW_GID}"
 
-    # If no Password has was given, we'll:
-    #   - Prompt for one if not given
-    #   - Generate a hash for the password
+    # If we've no password hash, ask for the pw & hash it.
     if [ -z "$PWHASH" ]; then
-        if [ -z "$PASSWORD" ]; then
-            read -s -p "  Passowrd: " PASSWORD
+        read -s -p "  Passowrd: " PASSWORD
 
-            # Clear the line.  Note we don't really care if the 
-            # username was too long for this to erase it all.
-            echo -ne "\r                                   \r"
-        fi
+        # Clear the line.  Note we don't really care if the 
+        # username was too long for this to erase it all.
+        echo -ne "\r                                   \r"
 
         # In the end, this is what we really needed.
         PW_HASH=$(slappasswd -s "$PASSWORD")
