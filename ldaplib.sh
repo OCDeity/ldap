@@ -738,6 +738,13 @@ ldapOUExists() {
 	fi
 }
 
+# ====================================
+#  Parameters
+# ====================================
+#  1 - OU Name to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
 ldapGetOUMembers() {
 	local ou_name=$1
 	local base_dn=$2
@@ -754,6 +761,33 @@ ldapGetOUMembers() {
 	fi
 
 	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(ou=$ou_name))" ou 2>/dev/null | grep -E "^ou:" | sed 's/ou: //g'	
+}
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - OU Name to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetOUMemberCount() {
+	local ou_name=$1
+	local base_dn=$2
+
+	# Make sure we have an OU name
+	if ! [ -n "$ou_name" ]; then
+		echo "Expected an OU name as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	# Search for the OU
+	ldapsearch -x -LLL  -b "ou=$ou_name,$base_dn" -s sub "(objectclass=*)" dn | grep -c ^dn:
 }
 
 
