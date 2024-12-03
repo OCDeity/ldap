@@ -642,19 +642,28 @@ ldapGetUserGroups() {
 # ====================================
 #  Parameters
 # ====================================
-#  1 - BaseDN (Optional)
+#  1 - OU Name (Optional)
+#  2 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
 ldapGetUsers() {
 
-	local base_dn=$1
+	local ou_name=$1
+	local base_dn=$2
 
 	# If the base_dn was not passed, attempt to get it:
 	if ! [ -n "$base_dn" ]; then
 		base_dn=$(getBaseDN)
 	fi
 
-	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount))" uid 2>/dev/null | grep -E "^uid:" | sed 's/uid: //g'
+	# If the ou_name was passed, add it to the search filter:
+	if [ -n "$ou_name" ]; then
+		search_domain="ou=$ou_name,$base_dn"
+	else
+		search_domain="$base_dn"
+	fi
+
+	ldapsearch -x -LLL -b "$search_domain" "(&(objectClass=posixAccount))" uid 2>/dev/null | grep -E "^uid:" | sed 's/uid: //g'
 }
 
 

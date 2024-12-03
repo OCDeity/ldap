@@ -13,9 +13,49 @@ if [ -z "$BASE_DN" ]; then
 fi
 
 
-readarray -t users < <(ldapGetUsers "$BASE_DN")
+readarray -t users < <(ldapGetUsers "users" "$BASE_DN")
 
 echo "Users found in \"$BASE_DN\":"
-for user in "${users[@]}"; do
-	echo "$user"
-done
+if [ ${#users[@]} -gt 0 ]; then
+    USER_DATA="UID\tGID\tUsername\n"
+    for user in "${users[@]}"; do
+        result=$(ldapGetUserID "$user" "$BASE_DN" 2>/dev/null)
+        verifyResult "$?" "$result"
+        user_uid="$result"
+
+        result=$(ldapGetUserGroupID "$user" "$BASE_DN" 2>/dev/null) 
+        verifyResult "$?" "$result"
+        user_gid="$result"
+
+        USER_DATA+="${user_uid}\t${user_gid}\t${user}\n"
+    done
+
+    echo -e "$USER_DATA" | column -t
+else
+    echo "No users found"
+fi
+
+echo ""
+
+readarray -t service_users < <(ldapGetUsers "services" $BASE_DN)
+
+if [ ${#service_users[@]} -gt 0 ]; then
+    SERVICE_DATA="UID\tGID\tUsername\n"
+    echo "Service users found in \"$BASE_DN\":"
+    for service_user in "${service_users[@]}"; do
+        result=$(ldapGetUserID "$service_user" "$BASE_DN" 2>/dev/null)
+        verifyResult "$?" "$result"
+        user_uid="$result"
+
+        result=$(ldapGetUserGroupID "$service_user" "$BASE_DN" 2>/dev/null) 
+        verifyResult "$?" "$result"
+        user_gid="$result"
+
+        SERVICE_DATA+="${user_uid}\t${user_gid}\t${service_user}\n"
+    done
+
+    echo -e "$SERVICE_DATA" | column -t
+else
+    echo "No service users found"
+fi
+
