@@ -18,4 +18,7 @@ if [ -z "$USERNAME" ]; then
 fi
 
 # Display the user
-ldapsearch -x -LLL -b "$BASE_DN" "(&(objectClass=posixAccount)(uid=$USERNAME))" 2>/dev/null
+result=$(ldapGetUserDetail "$USERNAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+echo "$result"

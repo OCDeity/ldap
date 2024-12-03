@@ -794,6 +794,33 @@ ldapGetOUMemberCount() {
 # ====================================
 #  Parameters
 # ====================================
+#  1 - Username to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetUserDetail() {
+	local username=$1
+	local base_dn=$2
+
+	# Make sure we have a username
+	if ! [ -n "$username" ]; then
+		echo "Expected a username as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi	
+
+	# Search for the user's details
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(uid=$username))"
+}
+
+
+# ====================================
+#  Parameters
+# ====================================
 #  1 - Returned value from a command
 #      Typically $?.
 #  2 - Result from the command
