@@ -18,4 +18,24 @@ if [ -z "$GROUPNAME" ]; then
 fi
 
 # Display the group members
-ldapGetMembers "$GROUPNAME" "$BASE_DN"
+result=$(ldapGetMembers "$GROUPNAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+# Only if we've got a user list, display it:
+if [ ${#result[@]} -gt 0 ]; then
+
+    # Build up a string of tab delimited output.
+    # We start with the headers:
+    USER_DATA="UID\tUsername\n"
+
+    # look up the UID for each user and add it to GROUP_DATA
+    while IFS= read -r group_user; do
+        user_id=$(ldapGetUserID "$group_user" "$BASE_DN")
+        verifyResult "$?" "$user_id"
+
+        USER_DATA+="${user_id}\t${group_user}\n"
+    done <<< "$result"
+
+    echo "Users found in group \"$GROUPNAME\":"
+    echo -e "$USER_DATA" | column -t
+fi
