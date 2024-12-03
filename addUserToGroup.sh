@@ -55,7 +55,7 @@ fi
 
 # Create a temporary file with a unique name
 temp_file=$(mktemp)
-echo "  Temp file: $temp_file"
+echo "  Temp ldif: $temp_file"
 
 # Export all of the variables we've collected and use them for templating
 export BASE_DN USERNAME GROUP_DN
