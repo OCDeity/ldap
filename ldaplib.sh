@@ -746,3 +746,25 @@ ldapGetOUMembers() {
 
 	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(ou=$ou_name))" ou 2>/dev/null | grep -E "^ou:" | sed 's/ou: //g'	
 }
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Returned value from a command
+#      Typically $?.
+#  2 - Result from the command
+# ====================================
+verifyResult() {
+    local returned=$1
+    local result=$2
+
+	if [ "$returned" -ne 0 ]; then
+		echo "------------------------------------------------------------------------"
+		echo "                   E X E C U T I O N      F A I L E D"
+		echo "------------------------------------------------------------------------"
+		echo "$result"
+		echo "------------------------------------------------------------------------"
+		exit 1
+	fi
+}
