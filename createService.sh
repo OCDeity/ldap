@@ -1,10 +1,14 @@
 #! /bin/bash
 
-REQUIRED_PARAMS=("SERVICE_NAME" "LDAP_PASSWORD")
-OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "SERVICE_PASSWORD" "LXC_SERVICE" "LXC_UID" "LXC_GID" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
+REQUIRED_PARAMS=("SERVICENAME" "LDAP_PASSWORD")
+OPTIONAL_PARAMS=("BASE_DN" "NEW_UID" "NEW_GID" "SERVICE_PW_HASH" "TEMPLATE_PATH" "SERVICE_LDIF_PATH")
 
 source ./ldaplib.sh
 source ./config.sh
+
+
+
+
 
 # Make sure that the output path exists..
 if [ ! -d "${SERVICE_LDIF_PATH}" ]; then
@@ -18,78 +22,175 @@ if [ -z "$BASE_DN" ]; then
 fi
 
 # Prompt for service name if it's not already set:  
-if [ -z "$SERVICE_NAME" ]; then
-    read -p "Enter service name: " SERVICE_NAME
+if [ -z "$SERVICENAME" ]; then
+    read -p "Enter service name: " SERVICENAME
 fi
 
-# Check if service already exists
-result=$(ldapUserExists "$SERVICE_NAME" "$BASE_DN")
-if [ "$result" == "true" ]; then
-    echo "The service ${SERVICE_NAME} already exists under '${BASE_DN}'."
-    echo "Either remove the service ${SERVICE_NAME} first or modify it instead."
-    exit 0
-fi
 
-# Work out the path to the service .ldif
-SERVICE_LDIF=$(realpath "${SERVICE_LDIF_PATH}/${SERVICE_NAME}.ldif")
+result=$(ldapUserExists "$SERVICENAME" "$BASE_DN")
+if [ "$result" != "true" ]; then
+    echo "Creating service ${SERVICENAME}"
 
-
-# Get the next available UID.  We will use the same ID for the group.
-if [ -z "$NEW_UID" ]; then
-    NEW_UID=$(ldapGetNextServiceUID "$BASE_DN")
-fi
-if [ -z "$NEW_GID" ]; then
-    NEW_GID="$NEW_UID"
-fi
-
-# Check if service password hash exists, if not prompt for password
-if [ -z "$SERVICE_PW_HASH" ]; then
-    if [ -z "$SERVICE_PASSWORD" ]; then
-        read -s -p "Service Password: " SERVICE_PASSWORD
-        echo ""
+    # Get the next available UID if it's not already set:   
+    if [ -z "$NEW_UID" ]; then
+        NEW_UID=$(ldapGetNextServiceUID "$BASE_DN")
     fi
-    SERVICE_PW_HASH=$(slappasswd -s "$SERVICE_PASSWORD") 
-fi
-
-# Export all of the variables we've collected and use them for templating
-export BASE_DN SERVICE_NAME SERVICE_PW_HASH NEW_UID NEW_GID
-TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/ServiceTemplate.txt")
-envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
-
-# If we don't yet have the admin password, we'll ask for it.
-if [ -z "$LDAP_PASSWORD" ]; then
-    read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-    echo ""
-fi
-
-# Import the new user into LDAP
-ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD"
-
-
-
-LXC_SERVICE_NAME="lxc-$SERVICE_NAME"
-result=$(ldapUserExists "$LXC_SERVICE_NAME" "$BASE_DN")
-if [ "$result" == "true" ]; then
-    echo "The service $LXC_SERVICE_NAME was already found under '${BASE_DN}'."
-    exit 0
-fi
-
-
-
-if [ "$LXC_SERVICE" == "true" ]; then
-
-    if [ -z "$LXC_UID" ]; then
-        LXC_UID=$((NEW_UID+100000))
-    fi
-    if [ -z "$LXC_GID" ]; then
-        LXC_GID=$((NEW_GID+100000))
+    result=$(ldapUserIdExists "$NEW_UID" "$BASE_DN")
+    if [ "$result" == "true" ]; then
+        echo "ERROR: User ID ${NEW_UID} already exists"
+        exit 1
     fi
 
-    # Export all of the variables we've collected and use them for templating
-    export BASE_DN LXC_SERVICE_NAME SERVICE_NAME SERVICE_PW_HASH LXC_UID LXC_GID
-    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/LxcServiceTemplate.txt")
+    # If not set by the caller, use the UID as the GID:
+    if [ -z "$NEW_GID" ]; then
+        NEW_GID="$NEW_UID"
+    fi
+
+    # We've got a group ID.  Check to see if it exists. 
+    # If it does, that may be OK.  We need to verify 
+    # that the service name and that group name match.
+    result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
+    if [ "$result" == "true" ]; then
+
+        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
+        verifyResult "$?" "$result"
+
+        if [ "$result" != "$SERVICENAME" ]; then
+            echo "ERROR: Group ID ${NEW_GID} already exists"
+            echo "  Expected: ${SERVICENAME}"
+            echo "  Found:    ${result}"
+            exit 1
+        fi
+    fi
+
+
+    # We should be all good on UID & GID.  Report them:
+    echo "  UID: ${NEW_UID}"
+    echo "  GID: ${NEW_GID}"
+
+
+    # If we were given a password hash, we will use it.
+    # Otherwise, we'll generate a random password and hash it.
+    # The idea is that a service doesn't need a password, but
+    # the posixAccount object requires one.
+    if [ -z "$SERVICE_PW_HASH" ]; then
+        random_password=$(openssl rand -base64 16)
+        SERVICE_PW_HASH=$(slappasswd -s "$random_password")
+    fi
+    echo "  PW_HASH: ${SERVICE_PW_HASH}"
+
+
+    # Get the LDAP Admin Password if we don't already have it.
+    getLDAPPassword LDAP_PASSWORD
+
+    # Work out the path to the user .ldif
+    SERVICE_LDIF=$(realpath "${SERVICE_LDIF_PATH}/${SERVICENAME}.ldif")
+    echo "  SERVICE_LDIF: ${SERVICE_LDIF}"
+
+    # Exporting variables is necessary for the envsubst command to work
+    export BASE_DN SERVICENAME SERVICE_PW_HASH NEW_UID NEW_GID
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/ServiceTemplate.txt")
     envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
     # Import the new user into LDAP
-    ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD"
+    result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    verifyResult "$?" "$result"
+
+    echo "  Created user ${SERVICENAME}"
+else
+    echo "Service ${SERVICENAME} exists"
+    result=$(ldapGetUserID "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+    verifyResult "$?" "$result"
+
+    # If the caller set a new UID, make sure it matches
+    # what we read from LDAP.
+    if ! [ -z "$NEW_UID" ]; then
+        if [ "$result" != "$NEW_UID" ]; then
+            echo "ERROR: User ID mismatch for ${SERVICENAME}"
+            echo "  Expected: ${NEW_UID}"
+            echo "  Read:     ${result}"
+            exit 1
+        fi
+    fi
+    NEW_UID="$result"
+    echo "  UID: ${NEW_UID}"
+
+    
+    # Now for the group ID.  See what is set on the LDAP user.
+    result=$(ldapGetUserGroupID "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+    verifyResult "$?" "$result"
+
+    # If the caller set a new GID, make sure it matches
+    # what we read from LDAP.
+    if ! [ -z "$NEW_GID" ]; then
+        if [ "$result" != "$NEW_GID" ]; then
+            echo "ERROR: Group ID mismatch for ${SERVICENAME}"
+            echo "  Expected: ${NEW_GID}"
+            echo "  Found:    ${result}"
+            exit 1
+        fi
+    fi
+    NEW_GID="$result"
+    echo "  GID: ${NEW_GID}"
+
+    if ! [ -z "$SERVICE_PW_HASH" ]; then
+        # Note that we could veify that the existing hash 
+        # is what the caller provided.  That requires extra
+        # permissions.  We'll skip it, at least for now.
+        # It may be wise to skip it forever.
+        echo "  PW_HASH: (not verified)"
+    fi
 fi
+
+
+
+
+# Check to see if the user group exists.
+result=$(ldapGroupExists "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+if [ "$result" != "true" ]; then
+    echo "Creating service group ${SERVICENAME}"
+
+    # The group name is the same as the service name:
+    GROUPNAME="$SERVICENAME"
+
+    echo "  GID: ${NEW_GID}"
+
+    # Get the LDAP Admin Password if we don't already have it.
+    getLDAPPassword LDAP_PASSWORD
+
+    # Get the path to the user group .ldif
+    SERVICE_GROUP_LDIF=$(realpath "${SERVICE_LDIF_PATH}/${SERVICENAME}-group.ldif")
+
+
+    # Exporting variables is necessary for the envsubst command to work
+    export BASE_DN GROUPNAME NEW_GID
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/GroupTemplate.txt")
+    envsubst < "${TEMPLATE_FILE}" > "${SERVICE_GROUP_LDIF}"
+
+    # Import the new user group into LDAP
+    result=$(ldapAdd "$SERVICE_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    verifyResult "$?" "$result"
+
+    echo "  Created group ${SERVICENAME}"
+    
+else
+    echo "Group ${SERVICENAME} exists"
+
+    # The user's group exists..  we need to make sure that
+    # it has a GID that matches that of the user.
+    result=$(ldapGetGroupID "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+    verifyResult "$?" "$result"
+
+    # Make sure that the group ID matches our user's GID.
+    if [ "$result" != "$NEW_GID" ]; then
+        echo "ERROR: Group ID mismatch for ${SERVICENAME}"
+        echo "  Expected: ${NEW_GID}"
+        echo "  Found:    ${result}"
+        exit 1
+    fi
+
+    echo "  GID: ${NEW_GID}"
+fi
+
