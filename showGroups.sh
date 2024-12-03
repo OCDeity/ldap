@@ -16,8 +16,24 @@ fi
 # Get the groups
 readarray -t groups < <(ldapGetGroups "$BASE_DN")
 
+
 # Display the groups
-echo "Groups in $BASE_DN:"  
-for group in "${groups[@]}"; do
-	echo "$group"
-done
+if [ ${#groups[@]} -gt 0 ]; then
+
+    # Build up a string of tab delimited output.
+    # We start with the headers:
+    GROUP_DATA="GID\tGroup\n"
+    for group in "${groups[@]}"; do
+    
+        # Look up the group's GID:
+        result=$(ldapGetGroupID "$group" "$BASE_DN" 2>/dev/null) 
+        verifyResult "$?" "$result"
+        group_gid="$result"
+
+        # Add the group's data to the string:
+        GROUP_DATA+="${group_gid}\t${group}\n"
+    done
+
+    echo "Groups found in \"$BASE_DN\":"
+    echo -e "$GROUP_DATA" | column -t
+fi
