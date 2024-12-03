@@ -17,6 +17,15 @@ if [ -z "$GROUPNAME" ]; then
     read -p "Group: " GROUPNAME
 fi
 
+# Make sure the group exists
+result=$(ldapGroupExists "$GROUPNAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+if [ "$result" != "true" ]; then
+    echo "Group \"$GROUPNAME\" not found in \"$BASE_DN\""
+    exit 1
+fi
+
 # Display the group members
 result=$(ldapGetMembers "$GROUPNAME" "$BASE_DN" 2>/dev/null)
 verifyResult "$?" "$result"

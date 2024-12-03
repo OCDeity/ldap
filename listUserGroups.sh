@@ -19,6 +19,15 @@ if [ -z "$USERNAME" ]; then
     read -p "Username: " USERNAME
 fi
 
+# Make sure the user exists
+result=$(ldapUserExists "$USERNAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+if [ "$result" != "true" ]; then
+    echo "User \"$USERNAME\" not found in \"$BASE_DN\""
+    exit 1
+fi
+
 # Display the user's groups
 result=$(ldapGetUserGroups "$USERNAME" "$BASE_DN")
 verifyResult "$?" "$result"
