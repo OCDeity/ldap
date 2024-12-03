@@ -760,7 +760,7 @@ ldapGetOUMembers() {
 		base_dn=$(getBaseDN)
 	fi
 
-	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixAccount)(ou=$ou_name))" ou 2>/dev/null | grep -E "^ou:" | sed 's/ou: //g'	
+	ldapsearch -x -LLL -b "ou=$ou_name,$base_dn" "(objectClass=posixAccount)" uid 2>/dev/null | grep -E "^uid:" | sed 's/uid: //g'	
 }
 
 
@@ -844,6 +844,35 @@ ldapGetGroupDetail() {
 	# Search for the group's details
 	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)(cn=$group_name))"
 }
+
+
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - OU Name to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetOUDetail() {
+	local ou_name=$1
+	local base_dn=$2
+
+	# Make sure we have an OU name
+	if ! [ -n "$ou_name" ]; then
+		echo "Expected an OU name as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi	
+
+	# Search for the OU's details
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=organizationalUnit)(ou=$ou_name))"
+}
+
 
 
 # ====================================

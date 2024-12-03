@@ -18,7 +18,18 @@ fi
 
 
 # Display the given group
-ldapsearch -x -LLL -b "$BASE_DN" "(&(objectClass=organizationalUnit)(ou=$OU_NAME))" 2>/dev/null
+result=$(ldapGetOUDetail "$OU_NAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+echo "$result"
+
 
 # Get the members of the OU
-ldapGetOUMembers "$OU_NAME" "$BASE_DN"  
+result=$(ldapGetOUMembers "$OU_NAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+if [ -n "$result" ]; then
+	echo ""
+	echo "Members:"
+	echo "$result"
+fi
