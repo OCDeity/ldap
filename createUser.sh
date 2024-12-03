@@ -59,11 +59,7 @@ if [ "$result" != "true" ]; then
     if [ "$result" == "true" ]; then
 
         result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Failed to get group name for ID ${NEW_GID}"
-            echo "$result"
-            exit 1
-        fi
+        verifyResult "$?" "$result"
 
         if [ "$result" != "$USERNAME" ]; then
             echo "ERROR: Group ID ${NEW_GID} already exists"
@@ -104,20 +100,13 @@ if [ "$result" != "true" ]; then
 
     # Import the new user into LDAP
     result=$(ldapAdd "$USER_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "Failed to create user ${USERNAME}"
-        echo "$result"
-        exit 1
-    fi
+    verifyResult "$?" "$result"
+
     echo "  Created user ${USERNAME}"
 else
     echo "User ${USERNAME} exists"
     result=$(ldapGetUserID "$USERNAME" "$BASE_DN" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to get user ID for ${USERNAME}"
-        echo "$result"
-        exit 1
-    fi
+    verifyResult "$?" "$result"
 
     # If the caller set a new UID, make sure it matches
     # what we read from LDAP.
@@ -135,11 +124,7 @@ else
     
     # Now for the group ID.  See what is set on the LDAP user.
     result=$(ldapGetUserGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to get group ID for ${USERNAME}"
-        echo "$result"
-        exit 1
-    fi
+    verifyResult "$?" "$result"
 
     # If the caller set a new GID, make sure it matches
     # what we read from LDAP.
@@ -166,11 +151,7 @@ fi
 
 # Check to see if the user group exists.
 result=$(ldapGroupExists "$USERNAME" "$BASE_DN" 2>/dev/null)
-if [ $? -ne 0 ]; then
-    echo "ERROR: Failed to check if group ${USERNAME} exists"
-    echo "$result"
-    exit 1
-fi
+verifyResult "$?" "$result"
 
 if [ "$result" != "true" ]; then
     echo "Creating group ${USERNAME}"
@@ -193,12 +174,9 @@ if [ "$result" != "true" ]; then
     envsubst < "${TEMPLATE_FILE}" > "${USER_GROUP_LDIF}"
 
     # Import the new user group into LDAP
-    resultlt=$(ldapAdd "$USER_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "Failed to create group ${USERNAME}"
-        echo "$result"
-        exit 1
-    fi
+    result=$(ldapAdd "$USER_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    verifyResult "$?" "$result"
+
     echo "  Created group ${USERNAME}"
     
 else
@@ -207,12 +185,8 @@ else
     # The user's group exists..  we need to make sure that
     # it has a GID that matches that of the user.
     result=$(ldapGetGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "ERROR: Failed to get group ID for ${USERNAME}"
-        echo "$result"
-        exit 1
-    fi
-
+    verifyResult "$?" "$result"
+    
     # Make sure that the group ID matches our user's GID.
     if [ "$result" != "$NEW_GID" ]; then
         echo "ERROR: Group ID mismatch for ${USERNAME}"
