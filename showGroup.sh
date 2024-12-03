@@ -17,6 +17,8 @@ if [ -z "$GROUPNAME" ]; then
     read -p "Group: " group_name
 fi
 
-
 # Display the given group
-ldapsearch -x -LLL -b "$BASE_DN" "(&(objectClass=posixGroup)(cn=$GROUPNAME))" 2>/dev/null
+result=$(ldapGetGroupDetail "$GROUPNAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
+
+echo "$result"

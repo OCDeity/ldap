@@ -818,6 +818,34 @@ ldapGetUserDetail() {
 }
 
 
+
+# ====================================
+#  Parameters
+# ====================================
+#  1 - Group Name to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetGroupDetail() {
+	local group_name=$1
+	local base_dn=$2
+
+	# Make sure we have a group name
+	if ! [ -n "$group_name" ]; then
+		echo "Expected a group name as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	# Search for the group's details
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)(cn=$group_name))"
+}
+
+
 # ====================================
 #  Parameters
 # ====================================
