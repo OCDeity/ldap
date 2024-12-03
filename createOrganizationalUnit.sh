@@ -15,19 +15,18 @@ fi
 
 # Prompt for the OU Name if it's not already set:	
 if [ -z "$OU_NAME" ]; then
-    read -p "Enter the OU Name: " OU_NAME
+    read -p "Create OU: " OU_NAME
+else
+	echo "Creating OU ${OU_NAME}"
 fi
 
-# Validate that an OU name was provided
-if ! [ -n "$OU_NAME" ]; then
-	echo "An OU Name must be provided."
-	exit 1
-fi
+result=$(ldapOUExists "$OU_NAME" "$BASE_DN" 2>/dev/null)
+verifyResult "$?" "$result"
 
 # Check if the OU already exists
-if [ "$(ldapOUExists "$OU_NAME" "$BASE_DN")" == "true" ]; then
-	echo "An OU with that name already exists."
-	exit 1
+if [ "$result" == "true" ]; then
+	echo "  OU ${OU_NAME} exists"
+	exit 0
 fi
 
 
@@ -39,5 +38,13 @@ export BASE_DN OU_NAME
 TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/OrganizationalUnit.txt")
 envsubst < "${TEMPLATE_FILE}" > "${temp_file}"
 
+echo "  OU_LDIF: ${temp_file}"
+
+# Get the LDAP Admin Password if we don't already have it.
+getLDAPPassword LDAP_PASSWORD
+
 # Import the new user into LDAP
-ldapAdd "$temp_file" "$BASE_DN" "$LDAP_PASSWORD"
+result=$(ldapAdd "$temp_file" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+verifyResult "$?" "$result"
+
+echo "  Created OU ${OU_NAME}"
