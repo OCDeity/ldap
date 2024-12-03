@@ -17,7 +17,6 @@ OU_NAME=
 
 # Password Related:
 PASSWORD_HASH=
-SERVICE_PASSWORD=
 SERVICE_PW_HASH="{SSHA}ecGlxH3B7fhSCC7GvEAIWYw8IN+eFI2C"
 LDAP_PASSWORD=
 
@@ -92,10 +91,6 @@ function handle_show_options {
                 ;;
             "PW_HASH")
                 echo "  --password-hash <hash>     The password hash for the given user."
-                ;;
-            "SERVICE_PASSWORD")
-                echo "  --service-password <pass>  The password for the given service."
-                echo "                             service-pw-hash will supersede service-password."
                 ;;
             "SERVICE_PW_HASH")
                 echo "  --service-pw-hash <hash>   The service password hash to use for the ldap access."
@@ -212,11 +207,6 @@ while [[ "$#" -gt 0 ]]; do
         # Password related:
         --password-hash)
             PW_HASH="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --service-password)
-            SERVICE_PASSWORD="$2"
             shift # past argument
             shift # past value
             ;;
