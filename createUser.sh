@@ -58,16 +58,17 @@ if [ "$result" != "true" ]; then
     result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
     if [ "$result" == "true" ]; then
 
-        FOUND_GROUP_NAME=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
+        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
         if [ $? -ne 0 ]; then
             echo "ERROR: Failed to get group name for ID ${NEW_GID}"
+            echo "$result"
             exit 1
         fi
 
-        if [ "$FOUND_GROUP_NAME" != "$USERNAME" ]; then
+        if [ "$result" != "$USERNAME" ]; then
             echo "ERROR: Group ID ${NEW_GID} already exists"
             echo "  Expected: ${USERNAME}"
-            echo "  Found:    ${FOUND_GROUP_NAME}"
+            echo "  Found:    ${result}"
             exit 1
         fi
     fi
