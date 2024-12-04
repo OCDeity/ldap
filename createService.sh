@@ -52,7 +52,7 @@ if [ "$result" != "true" ]; then
     result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
     if [ "$result" == "true" ]; then
 
-        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
+        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN")
         verifyResult "$?" "$result"
 
         if [ "$result" != "$SERVICENAME" ]; then
@@ -93,13 +93,13 @@ if [ "$result" != "true" ]; then
     envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
     # Import the new user into LDAP
-    result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    result=$(ldapAdd "$SERVICE_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
     verifyResult "$?" "$result"
 
     echo "  Created user ${SERVICENAME}"
 else
     echo "Service ${SERVICENAME} exists"
-    result=$(ldapGetUserID "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+    result=$(ldapGetUserID "$SERVICENAME" "$BASE_DN")
     verifyResult "$?" "$result"
 
     # If the caller set a new UID, make sure it matches
@@ -117,7 +117,7 @@ else
 
     
     # Now for the group ID.  See what is set on the LDAP user.
-    result=$(ldapGetUserGroupID "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+    result=$(ldapGetUserGroupID "$SERVICENAME" "$BASE_DN")
     verifyResult "$?" "$result"
 
     # If the caller set a new GID, make sure it matches
@@ -146,7 +146,7 @@ fi
 
 
 # Check to see if the user group exists.
-result=$(ldapGroupExists "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+result=$(ldapGroupExists "$SERVICENAME" "$BASE_DN")
 verifyResult "$?" "$result"
 
 if [ "$result" != "true" ]; then
@@ -170,7 +170,7 @@ if [ "$result" != "true" ]; then
     envsubst < "${TEMPLATE_FILE}" > "${SERVICE_GROUP_LDIF}"
 
     # Import the new user group into LDAP
-    result=$(ldapAdd "$SERVICE_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    result=$(ldapAdd "$SERVICE_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
     verifyResult "$?" "$result"
 
     echo "  Created group ${SERVICENAME}"
@@ -180,7 +180,7 @@ else
 
     # The user's group exists..  we need to make sure that
     # it has a GID that matches that of the user.
-    result=$(ldapGetGroupID "$SERVICENAME" "$BASE_DN" 2>/dev/null)
+    result=$(ldapGetGroupID "$SERVICENAME" "$BASE_DN")
     verifyResult "$?" "$result"
 
     # Make sure that the group ID matches our user's GID.
