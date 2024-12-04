@@ -1,15 +1,10 @@
-dn: uid=$LXC_SERVICENAME,ou=services,$BASE_DN
-objectClass: inetOrgPerson
+dn: uid=$SERVICENAME,ou=services,$BASE_DN
+objectClass: account
 objectClass: posixAccount
-objectClass: shadowAccount
-uid: $LXC_SERVICENAME
-sn: Service
-givenName: $LXC_SERVICENAME
-cn: $LXC_SERVICENAME
-displayName: $LXC_SERVICENAME
-uidNumber: $LXC_UID
-gidNumber: $LXC_GID
-userPassword: $SERVICE_PW_HASH
+cn: $SERVICENAME service
+uid: $SERVICENAME
+uidNumber: $NEW_UID
+gidNumber: $NEW_GID
 homeDirectory: /srv/$SERVICENAME
 loginShell: /sbin/nologin
-gecos: LXC mapping for $SERVICENAME Account
+userPassword: $SERVICE_PW_HASH
