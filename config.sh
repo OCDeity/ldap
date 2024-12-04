@@ -17,15 +17,13 @@ OU_NAME=
 
 # Password Related:
 PASSWORD_HASH=
-SERVICE_PW_HASH="{SSHA}ecGlxH3B7fhSCC7GvEAIWYw8IN+eFI2C"
 LDAP_PASSWORD=
 
 # ID Number Related:
 NEW_UID=
 NEW_GID=
-LXC_UID=
-LXC_GID=
 
+LXC_OFFSET=100000
 
 
 
@@ -83,17 +81,8 @@ function handle_show_options {
             "NEW_UID")
                 echo "  --new-uid <uid>            The new user ID."
                 ;;
-            "LXC_UID")
-                echo "  --lxc-uid <uid>            The user ID for the LXC service mapping."
-                ;;
-            "LXC_GID")
-                echo "  --lxc-gid <gid>            The group ID for the LXC service mapping."
-                ;;
             "PW_HASH")
                 echo "  --password-hash <hash>     The password hash for the given user."
-                ;;
-            "SERVICE_PW_HASH")
-                echo "  --service-pw-hash <hash>   The service password hash to use for the ldap access."
                 ;;
             "LDAP_PASSWORD")
                 echo "  --ldap-password <pass>     The password for the ldap access."
@@ -185,33 +174,11 @@ while [[ "$#" -gt 0 ]]; do
             shift # past argument
             shift # past value
             ;;
-        --lxc-uid)
-            LXC_UID="$2"
-            if ! [[ "$LXC_UID" =~ ^[0-9]+$ ]]; then
-                echo "The lxc-uid parameter must be a number."
-                exit 1
-            fi
-            shift # past argument
-            shift # past value
-            ;;  
-        --lxc-gid)
-            LXC_GID="$2"
-            if ! [[ "$LXC_GID" =~ ^[0-9]+$ ]]; then
-                echo "The lxc-gid parameter must be a number."
-                exit 1
-            fi
-            shift # past argument
-            shift # past value
-            ;;
+
 
         # Password related:
         --password-hash)
             PW_HASH="$2"
-            shift # past argument
-            shift # past value
-            ;;
-        --service-pw-hash)
-            SERVICE_PW_HASH="$2"
             shift # past argument
             shift # past value
             ;;
