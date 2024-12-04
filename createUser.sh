@@ -58,7 +58,7 @@ if [ "$result" != "true" ]; then
     result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
     if [ "$result" == "true" ]; then
 
-        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN" 2>/dev/null)
+        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN")
         verifyResult "$?" "$result"
 
         if [ "$result" != "$USERNAME" ]; then
@@ -99,13 +99,13 @@ if [ "$result" != "true" ]; then
     envsubst < "${TEMPLATE_FILE}" > "${USER_LDIF}"
 
     # Import the new user into LDAP
-    result=$(ldapAdd "$USER_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    result=$(ldapAdd "$USER_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
     verifyResult "$?" "$result"
 
     echo "  Created user ${USERNAME}"
 else
     echo "User ${USERNAME} exists"
-    result=$(ldapGetUserID "$USERNAME" "$BASE_DN" 2>/dev/null)
+    result=$(ldapGetUserID "$USERNAME" "$BASE_DN")
     verifyResult "$?" "$result"
 
     # If the caller set a new UID, make sure it matches
@@ -123,7 +123,7 @@ else
 
     
     # Now for the group ID.  See what is set on the LDAP user.
-    result=$(ldapGetUserGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
+    result=$(ldapGetUserGroupID "$USERNAME" "$BASE_DN")
     verifyResult "$?" "$result"
 
     # If the caller set a new GID, make sure it matches
@@ -150,7 +150,7 @@ fi
 
 
 # Check to see if the user group exists.
-result=$(ldapGroupExists "$USERNAME" "$BASE_DN" 2>/dev/null)
+result=$(ldapGroupExists "$USERNAME" "$BASE_DN")
 verifyResult "$?" "$result"
 
 if [ "$result" != "true" ]; then
@@ -170,11 +170,11 @@ if [ "$result" != "true" ]; then
 
     # Exporting variables is necessary for the envsubst command to work
     export BASE_DN GROUPNAME NEW_GID
-    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/GroupTemplate.txt")
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/Group.txt")
     envsubst < "${TEMPLATE_FILE}" > "${USER_GROUP_LDIF}"
 
     # Import the new user group into LDAP
-    result=$(ldapAdd "$USER_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    result=$(ldapAdd "$USER_GROUP_LDIF" "$BASE_DN" "$LDAP_PASSWORD")
     verifyResult "$?" "$result"
 
     echo "  Created group ${USERNAME}"
@@ -184,7 +184,7 @@ else
 
     # The user's group exists..  we need to make sure that
     # it has a GID that matches that of the user.
-    result=$(ldapGetGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
+    result=$(ldapGetGroupID "$USERNAME" "$BASE_DN")
     verifyResult "$?" "$result"
 
     # Make sure that the group ID matches our user's GID.
