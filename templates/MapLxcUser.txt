@@ -1,10 +1,11 @@
-dn: uid=$USERNAME,ou=users,$BASE_DN
+dn: uid=$MAPPED_NAME,ou=users,$BASE_DN
 objectClass: account
 objectClass: posixAccount
-cn: $USERNAME user
-uid: $USERNAME
+cn: $MAPPED_NAME mapped user
+uid: $MAPPED_NAME
 uidNumber: $NEW_UID
 gidNumber: $NEW_GID
-homeDirectory: /home/$USERNAME
-loginShell: /bin/bash
+homeDirectory: /home/$MAPPED_NAME
+loginShell: /sbin/nologin
+description: LXC user $MAPPED_NAME (mapped from $USERNAME)
 userPassword: $PW_HASH
