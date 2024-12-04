@@ -96,13 +96,6 @@ if [ -z "$NEW_GID" ]; then
     NEW_GID=$(($result + $LXC_OFFSET))
 fi
 
-# Check to see if the GID already exists:
-result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
-verifyResult "$?" "$result"
-if [ "$result" == "true" ]; then
-    echo "  GID $NEW_GID already exists!"
-    exit 1
-fi
 echo "  GID: $NEW_GID"
 
 
