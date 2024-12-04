@@ -20,7 +20,12 @@ if [ ${#users[@]} -gt 0 ]; then
     # Build up a string of tab delimited output.
     # We start with the headers:
     USER_DATA="UID\tGID\tUsername\n"
+    USER_COUNT=0
     for user in "${users[@]}"; do
+
+        if [ -z "$user" ]; then
+            continue
+        fi
     
         # Look up the user's UID:
         result=$(ldapGetUserID "$user" "$BASE_DN" 2>/dev/null)
@@ -34,9 +39,11 @@ if [ ${#users[@]} -gt 0 ]; then
 
 
         USER_DATA+="${user_uid}\t${user_gid}\t${user}\n"
+
+        USER_COUNT=$((USER_COUNT + 1))
     done
 
-    echo "Users found in \"$BASE_DN\":"
+    echo "Users found in \"$BASE_DN\" ($USER_COUNT):"
     echo -e "$USER_DATA" | column -t
     echo ""
 fi
