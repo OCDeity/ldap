@@ -72,10 +72,10 @@ GROUP_DN=$(ldapGetGroupDN "$USERNAME" "$BASE_DN")
 verifyResult "$?" "$GROUP_DN"
 
 if [ -n "$GROUP_DN" ]; then
-    echo -n "  Removing user's group $GROUP_DN.. "
-
     # Get the LDAP Admin Password if we don't already have it.
     getLDAPPassword LDAP_PASSWORD
+
+    echo -n "  Removing user's group $GROUP_DN.. "
 
     result=$(ldapDelete "$GROUP_DN" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
     verifyResult "$?" "$result"
