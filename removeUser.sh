@@ -12,16 +12,19 @@ if [ -z "$BASE_DN" ]; then
     BASE_DN=$(getBaseDN)
 fi
 
+echo "Remove (DELETE) User"
 
 # Ask for the username
 if [ -z "$USERNAME" ]; then
-    read -p "User to DELETE: " USERNAME
+    read -p "  Username: " USERNAME
+else 
+    echo "  Username: $USERNAME"
 fi
 
 # Check if user exists
 user_dn=$(ldapGetUserDN "$USERNAME" "$BASE_DN")
 if ! [ -n "$user_dn" ]; then
-	echo "User \"$USERNAME\" was not found in \"$BASE_DN\"."
+	echo "  User \"$USERNAME\" found."
 	exit 1
 fi
 
@@ -29,148 +32,66 @@ fi
 # Get the user's groups
 readarray -t user_groups < <(ldapGetUserGroups "$USERNAME" "$BASE_DN")
 if [ ${#user_groups[@]} -gt 0 ]; then
-	echo "User $USERNAME will be removed from the following groups:"
-	printf '%s\n' "${user_groups[@]}"
+	echo "  Remove \"$USERNAME\" from groups:"
+	printf '    - %s\n' "${user_groups[@]}"
+
+    # Get the LDAP Admin Password if we don't already have it.
+    getLDAPPassword LDAP_PASSWORD
+
+    echo "  Executing Remove:"
+
+    # Remove the user from each group
+    for group in "${user_groups[@]}"; do
+
+        # Get the group's DN
+        GROUP_DN=$(ldapGetGroupDN "$group" "$BASE_DN")
+        verifyResult "$?" "$GROUP_DN"
+
+        # Create a temporary file with a unique name
+        temp_file=$(mktemp)
+
+        echo -n "    - $GROUP_DN (Temp LDIF: $temp_file).. "
+
+        # Export all of the variables we've collected and use them for templating
+        export BASE_DN USERNAME GROUP_DN
+        TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/RemoveUserFromGroup.txt")
+        envsubst < "$TEMPLATE_FILE" > "$temp_file"
+
+        # Attempt to execute the modification in the .ldiff file we just constructed:
+        result=$(ldapModify "$temp_file" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+        verifyResult "$?" "$result"
+
+        echo "  Removed."
+    done
+
+fi
+
+
+# Get the user's group DN
+GROUP_DN=$(ldapGetGroupDN "$USERNAME" "$BASE_DN")
+verifyResult "$?" "$GROUP_DN"
+
+if [ -n "$GROUP_DN" ]; then
+    echo -n "  Removing user's group $GROUP_DN.. "
+
+    # Get the LDAP Admin Password if we don't already have it.
+    getLDAPPassword LDAP_PASSWORD
+
+    result=$(ldapDelete "$GROUP_DN" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+    verifyResult "$?" "$result"
+
+    echo "  removed."
 fi
 
 
 
-# Remove the user from each group
-for group in "${user_groups[@]}"; do
 
-    # Get the group's DN
-    GROUP_DN=$(ldapGetGroupDN "$group" "$BASE_DN")  
-
-    # If we don't yet have the admin password, we'll ask for it.    
-    if [ -z "$LDAP_PASSWORD" ]; then
-        read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-        echo ""
-    fi
-
-    # Create a temporary file with a unique name
-    temp_file=$(mktemp)
-
-    # Export all of the variables we've collected and use them for templating
-    export BASE_DN USERNAME GROUP_DN
-    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/RemoveUserFromGroup.txt")
-    envsubst < "$TEMPLATE_FILE" > "$temp_file"
-
-    # Attempt to execute the modification in the .ldiff file we just constructed:
-    ldapModify "$temp_file" "$BASE_DN" "$LDAP_PASSWORD"
-done
-
-
-user_group_dn=$(ldapsearch -x -LLL -b "$BASE_DN" "(&(objectClass=posixGroup)(cn=$USERNAME))" 2>/dev/null  | grep -E "^dn:" | head -1 | sed 's/dn: //')
-if [ -n "$user_group_dn" ]; then
-    echo "Deleting group $USERNAME..."
-
-    # If we don't yet have the admin password, we'll ask for it.    
-    if [ -z "$LDAP_PASSWORD" ]; then
-        read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-        echo ""
-    fi
-        
-
-    ldapDelete "$user_group_dn" "$BASE_DN" "$LDAP_PASSWORD"
-fi
-
+# Get the LDAP Admin Password if we don't already have it.
+getLDAPPassword LDAP_PASSWORD
 
 # Delete the user
-echo "Deleting user $USERNAME..."
+echo -n "  Removing user $user_dn.. "
+result=$(ldapDelete "$user_dn" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+verifyResult "$?" "$result"
 
-# If we don't yet have the admin password, we'll ask for it.    
-if [ -z "$LDAP_PASSWORD" ]; then
-    read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-    echo ""
-fi
-
-ldapDelete "$user_dn" "$BASE_DN" "$LDAP_PASSWORD"
-
-
-# Check if an LXC service mapping exists
-LXC_SERVICE_NAME="lxc-$USERNAME"
-result=$(ldapUserExists "$LXC_SERVICE_NAME" "$BASE_DN")
-if [ "$result" == "true" ] && [ -z "$LXC_SERVICE" ]; then
-    echo "The service \"$LXC_SERVICE_NAME\" was found under \"${BASE_DN}\"."
-    read -p "Remove \"$LXC_SERVICE_NAME\" and its group? (y/N)" response
-    response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
-    if [[ "$response" =~ ^(yes|y)$ ]]; then
-        LXC_SERVICE="true"
-    fi
-fi
-
-
-# Check if the LXC service mapping exist
-user_dn=$(ldapGetUserDN "$LXC_SERVICE_NAME" "$BASE_DN")
-if [ -n "$user_dn" ]; then
-
-    if [ -z "$LXC_SERVICE" ]; then
-        read -p "Delete the LXC mapping \"$LXC_SERVICE_NAME\"? (y/N)" response
-        response=$(echo "$response" | tr '[:upper:]' '[:lower:]')
-        if [[ "$response" =~ ^(yes|y)$ ]]; then
-            LXC_SERVICE="true"
-        fi
-    fi
-
-    if [ "$LXC_SERVICE" == "true" ]; then
-
-        # Get the user's groups
-        readarray -t user_groups < <(ldapGetUserGroups "$LXC_SERVICE_NAME" "$BASE_DN")
-        # Remove the user from each group
-        for group in "${user_groups[@]}"; do
-
-            # Get the group's DN
-            GROUP_DN=$(ldapGetGroupDN "$group" "$BASE_DN")  
-
-            # If we don't yet have the admin password, we'll ask for it.    
-            if [ -z "$LDAP_PASSWORD" ]; then
-                read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-                echo ""
-            fi
-
-            # Create a temporary file with a unique name
-            temp_file=$(mktemp)
-            
-            # For the teplate.. for now...
-            USERNAME=$LXC_SERVICE_NAME
-
-            # Export all of the variables we've collected and use them for templating
-            export BASE_DN USERNAME GROUP_DN
-            TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/RemoveUserFromGroup.txt")
-            envsubst < "$TEMPLATE_FILE" > "$temp_file"
-
-            # Attempt to execute the modification in the .ldiff file we just constructed:
-            ldapModify "$temp_file" "$BASE_DN" "$LDAP_PASSWORD"
-        done
-
-        
-
-        user_group_dn=$(ldapsearch -x -LLL -b "$BASE_DN" "(&(objectClass=posixGroup)(cn=$LXC_SERVICE_NAME))" 2>/dev/null  | grep -E "^dn:" | head -1 | sed 's/dn: //')
-        if [ -n "$user_group_dn" ]; then
-            echo "Deleting group $LXC_SERVICE_NAME..."
-
-            # If we don't yet have the admin password, we'll ask for it.    
-            if [ -z "$LDAP_PASSWORD" ]; then
-                read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-                echo ""
-            fi
-            
-            ldapDelete "$user_group_dn" "$BASE_DN" "$LDAP_PASSWORD"
-        fi
-
-
-        # Delete the user
-        echo "Deleting user $LXC_SERVICE_NAME..."
-
-        # If we don't yet have the admin password, we'll ask for it.    
-        if [ -z "$LDAP_PASSWORD" ]; then
-            read -s -p "LDAP Admin Password: " LDAP_PASSWORD
-            echo ""
-        fi
-
-        ldapDelete "$user_dn" "$BASE_DN" "$LDAP_PASSWORD"
-
-    fi
-fi
-
-
+echo "  removed."
