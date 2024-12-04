@@ -1,0 +1,6 @@
+dn: cn=$LXC_GROUPNAME,ou=groups,$BASE_DN
+objectClass: top
+objectClass: posixGroup
+cn: $LXC_GROUPNAME
+gidNumber: $LXC_GID
+description: LXC mapping for $GROUPNAME
