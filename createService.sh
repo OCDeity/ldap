@@ -89,7 +89,7 @@ if [ "$result" != "true" ]; then
 
     # Exporting variables is necessary for the envsubst command to work
     export BASE_DN SERVICENAME SERVICE_PW_HASH NEW_UID NEW_GID
-    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/ServiceTemplate.txt")
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/Service.txt")
     envsubst < "${TEMPLATE_FILE}" > "${SERVICE_LDIF}"
 
     # Import the new user into LDAP
