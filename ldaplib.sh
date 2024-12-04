@@ -486,6 +486,40 @@ ldapGetOUDN() {
 
 
 
+# ====================================
+#  Parameters
+# ====================================
+#  1 - OU Name to search for members
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+#  3 - Admin Password
+# ====================================
+ldapGetOUMembers() {
+	local ou_name=$1
+	local base_dn=$2
+	local admin_password=$3
+
+	# Make sure we have an ou_name
+	if ! [ -n "$ou_name" ]; then
+		echo "Expected an OU name as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	# Make sure we have an admin_password
+	if ! [ -n "$admin_password" ]; then
+		read -p "  Admin Password: " admin_password
+	fi
+
+	# Search for the OU members
+	ldapsearch -x -D "cn=admin,$base_dn" -w "$admin_password" -b "ou=$ou_name,$base_dn" -s sub "(objectClass=*)" uid 2>/dev/null | grep -E "^uid:" | sed 's/uid: //g'
+}
+
+
 # =====================================
 #  Parameters
 # =====================================
@@ -677,12 +711,9 @@ ldapGetUserGroups() {
 ldapGetUsers() {
 
 	local ou_name=$1
-	local base_dn=$2
-
-	# If the base_dn was not passed, attempt to get it:
-	if ! [ -n "$base_dn" ]; then
-		base_dn=$(getBaseDN)
-	fi
+	local min_uid=$2
+	local max_uid=$3
+	local base_dn=$4
 
 	# If the ou_name was passed, add it to the search filter:
 	if [ -n "$ou_name" ]; then
@@ -691,7 +722,21 @@ ldapGetUsers() {
 		search_domain="$base_dn"
 	fi
 
-	ldapsearch -x -LLL -b "$search_domain" "(&(objectClass=posixAccount))" uid 2>/dev/null | grep -E "^uid:" | sed 's/uid: //g'
+	search_filter=""
+	if [ -n "$min_uid" ]; then
+		search_filter+="(uidNumber>=$min_uid)"
+	fi
+
+	if [ -n "$max_uid" ]; then
+		search_filter+="(uidNumber<=$max_uid)"
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	ldapsearch -x -LLL -b "$search_domain" "(&(objectClass=posixAccount)$search_filter)" uid 2>/dev/null | grep -E "^uid:" | sed 's/uid: //g'
 }
 
 
