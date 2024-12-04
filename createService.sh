@@ -129,7 +129,7 @@ fi
 
 
 # Check to see if the user group exists.
-result=$(ldapGroupExists "$SERVICENAME" "$BASE_DN")
+result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
 verifyResult "$?" "$result"
 
 if [ "$result" != "true" ]; then
@@ -160,20 +160,6 @@ if [ "$result" != "true" ]; then
     
 else
     echo "Group ${SERVICENAME} exists"
-
-    # The user's group exists..  we need to make sure that
-    # it has a GID that matches that of the user.
-    result=$(ldapGetGroupID "$SERVICENAME" "$BASE_DN")
-    verifyResult "$?" "$result"
-
-    # Make sure that the group ID matches our user's GID.
-    if [ "$result" != "$NEW_GID" ]; then
-        echo "ERROR: Group ID mismatch for ${SERVICENAME}"
-        echo "  Expected: ${NEW_GID}"
-        echo "  Found:    ${result}"
-        exit 1
-    fi
-
     echo "  GID: ${NEW_GID}"
 fi
 
