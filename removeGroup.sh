@@ -39,7 +39,7 @@ GROUP_DN=$result
 
 # Get the list of users in the group first..
 # Display the group members
-result=$(ldapGetMembers "$GROUPNAME" "$BASE_DN" 2>/dev/null)
+result=$(ldapGetMembers "$GROUPNAME" "$BASE_DN")
 verifyResult "$?" "$result"
 
 # Only if we've got a user list, display it:
@@ -50,6 +50,10 @@ if [ ${#result[@]} -gt 0 ]; then
 
     # look up the UID for each user and add it to GROUP_DATA
     while IFS= read -r group_user; do
+
+        if [ -z "$group_user" ]; then
+            continue
+        fi
 
         USERNAME=$group_user
 
@@ -64,7 +68,7 @@ if [ ${#result[@]} -gt 0 ]; then
 
 
         # Attempt to execute the modification in the .ldiff file we just constructed:
-        result=$(ldapModify "$temp_file" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+        result=$(ldapModify "$temp_file" "$BASE_DN" "$LDAP_PASSWORD")
         verifyResult "$?" "$result"
 
         echo "  Removed."
@@ -78,7 +82,7 @@ fi
 getLDAPPassword LDAP_PASSWORD
 
 echo -n "  Removing group $GROUP_DN.. "
-result=$(ldapDelete "$GROUP_DN" "$BASE_DN" "$LDAP_PASSWORD" 2>/dev/null)
+result=$(ldapDelete "$GROUP_DN" "$BASE_DN" "$LDAP_PASSWORD")
 verifyResult "$?" "$result"
 
 echo "  Removed."
