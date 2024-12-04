@@ -29,14 +29,18 @@ else
     echo "  Username: $USERNAME"
 fi
 
-# First check to be sure that the user exists in LDAP:
-result=$(ldapUserExists "$USERNAME" "$BASE_DN")
-verifyResult "$?" "$result"
-if [ "$result" == "false" ]; then
-    echo "  User $USERNAME not found."
-    exit 1
-fi
+# We only need to verify the user exists if we don't have 
+# a mapped name, a UID and a GID.
+if [ -z "$MAPPED_NAME" ] || [ -z "$NEW_UID" ] || [ -z "$NEW_GID" ]; then
 
+    # First check to be sure that the user exists in LDAP:
+    result=$(ldapUserExists "$USERNAME" "$BASE_DN")
+    verifyResult "$?" "$result"
+    if [ "$result" == "false" ]; then
+        echo "  User $USERNAME not found."
+        exit 1
+    fi
+fi
 
 # Unless MAPPED_NAME is set, we'll use the default of lxc-<username>
 if [ -z "$MAPPED_NAME" ]; then
