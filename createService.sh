@@ -46,23 +46,6 @@ if [ "$result" != "true" ]; then
         NEW_GID="$NEW_UID"
     fi
 
-    # We've got a group ID.  Check to see if it exists. 
-    # If it does, that may be OK.  We need to verify 
-    # that the service name and that group name match.
-    result=$(ldapGroupIdExists "$NEW_GID" "$BASE_DN")
-    if [ "$result" == "true" ]; then
-
-        result=$(ldapGetGroupName "$NEW_GID" "$BASE_DN")
-        verifyResult "$?" "$result"
-
-        if [ "$result" != "$SERVICENAME" ]; then
-            echo "ERROR: Group ID ${NEW_GID} already exists"
-            echo "  Expected: ${SERVICENAME}"
-            echo "  Found:    ${result}"
-            exit 1
-        fi
-    fi
-
 
     # We should be all good on UID & GID.  Report them:
     echo "  UID: ${NEW_UID}"
