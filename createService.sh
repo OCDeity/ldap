@@ -166,7 +166,7 @@ if [ "$result" != "true" ]; then
 
     # Exporting variables is necessary for the envsubst command to work
     export BASE_DN GROUPNAME NEW_GID
-    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/GroupTemplate.txt")
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/Group.txt")
     envsubst < "${TEMPLATE_FILE}" > "${SERVICE_GROUP_LDIF}"
 
     # Import the new user group into LDAP
