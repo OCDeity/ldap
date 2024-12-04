@@ -14,6 +14,7 @@ USERNAME=
 SERVICENAME=
 GROUPNAME=
 OU_NAME=
+MAPPED_NAME=
 
 # Password Related:
 PASSWORD_HASH=
@@ -71,6 +72,9 @@ function handle_show_options {
                 ;;
             "SERVICENAME")
                 echo "  --servicename <name>       The service name."
+                ;;
+            "MAPPED_NAME")
+                echo "  --mapped-name <name>       The mapped name."
                 ;;
             "OU_NAME")
                 echo "  --ou <name>                The organizational unit's name."
@@ -151,6 +155,11 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --ou)
             OU_NAME="$2"
+            shift # past argument
+            shift # past value
+            ;;
+        --mapped-name)
+            MAPPED_NAME="$2"
             shift # past argument
             shift # past value
             ;;
