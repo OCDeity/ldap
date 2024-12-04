@@ -1,10 +1,11 @@
-dn: uid=$SERVICENAME,ou=services,$BASE_DN
+dn: uid=$MAPPED_NAME,ou=services,$BASE_DN
 objectClass: account
 objectClass: posixAccount
-cn: $SERVICENAME service
-uid: $SERVICENAME
+cn: $MAPPED_NAME mapped service
+uid: $MAPPED_NAME
 uidNumber: $NEW_UID
 gidNumber: $NEW_GID
-homeDirectory: /srv/$SERVICENAME
+homeDirectory: /srv/$MAPPED_NAME
 loginShell: /sbin/nologin
-userPassword: $SERVICE_PW_HASH
+description: LXC service $MAPPED_NAME (mapped from $SERVICENAME)
+userPassword: $PW_HASH
