@@ -38,9 +38,9 @@ if [ ${#users[@]} -gt 0 ]; then
 
     echo "Users found in \"$BASE_DN\":"
     echo -e "$USER_DATA" | column -t
+    echo ""
 fi
 
-echo ""
 
 
 # Get our array of service users:
@@ -51,7 +51,12 @@ if [ ${#service_users[@]} -gt 0 ]; then
     # Build up a string of tab delimited output.
     # We start with the headers:
     SERVICE_DATA="UID\tGID\tUsername\n"
+    USER_COUNT=0
     for service_user in "${service_users[@]}"; do
+
+        if [ -z "$service_user" ]; then
+            continue
+        fi
 
         # Look up the service user's UID:
         result=$(ldapGetUserID "$service_user" "$BASE_DN" 2>/dev/null)
@@ -65,9 +70,11 @@ if [ ${#service_users[@]} -gt 0 ]; then
 
         # Add the service user's data to the string:
         SERVICE_DATA+="${user_uid}\t${user_gid}\t${service_user}\n"
+
+        USER_COUNT=$((USER_COUNT + 1))
     done
 
-    echo "Service users found in \"$BASE_DN\":"
+    echo "Service users found in \"$BASE_DN\" ($USER_COUNT):"
     echo -e "$SERVICE_DATA" | column -t
 fi
 
