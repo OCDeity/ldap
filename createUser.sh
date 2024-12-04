@@ -95,7 +95,7 @@ if [ "$result" != "true" ]; then
 
     # Exporting variables is necessary for the envsubst command to work
     export BASE_DN USERNAME PW_HASH NEW_UID NEW_GID
-    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/UserTemplate.txt")
+    TEMPLATE_FILE=$(realpath "${TEMPLATE_PATH}/User.txt")
     envsubst < "${TEMPLATE_FILE}" > "${USER_LDIF}"
 
     # Import the new user into LDAP
@@ -186,7 +186,7 @@ else
     # it has a GID that matches that of the user.
     result=$(ldapGetGroupID "$USERNAME" "$BASE_DN" 2>/dev/null)
     verifyResult "$?" "$result"
-    
+
     # Make sure that the group ID matches our user's GID.
     if [ "$result" != "$NEW_GID" ]; then
         echo "ERROR: Group ID mismatch for ${USERNAME}"
