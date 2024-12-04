@@ -53,7 +53,7 @@ if [ ${#result[@]} -gt 0 ]; then
     done <<< "$result"
 
     if [ $USER_COUNT -gt 0 ]; then
-        echo "Users found in group \"$GROUPNAME\":"
+        echo "Users found in group \"$GROUPNAME\" ($USER_COUNT):"
         echo -e "$USER_DATA" | column -t
     fi
 fi
