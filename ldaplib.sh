@@ -458,6 +458,34 @@ ldapGetUserDN() {
 
 
 
+# ====================================
+#  Parameters
+# ====================================
+#  1 - OU Name to search for
+#  2 - BaseDN (Optional)
+#      If omitted, getBaseDN is called
+# ====================================
+ldapGetOUDN() {
+	local ou_name=$1
+	local base_dn=$2
+
+	# Make sure we have an ou_name
+	if ! [ -n "$ou_name" ]; then
+		echo "Expected an OU name as the first parameter."
+		exit 1
+	fi
+
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
+	# Search for the OU
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=organizationalUnit)(ou=$ou_name))" dn 2>/dev/null | grep -E "^dn:" | head -1 | sed 's/dn: //'
+}
+
+
+
 # =====================================
 #  Parameters
 # =====================================
