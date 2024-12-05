@@ -275,6 +275,11 @@ ldapGetGroupID() {
 		exit 1
 	fi
 
+	# If the base_dn was not passed, attempt to get it:
+	if ! [ -n "$base_dn" ]; then
+		base_dn=$(getBaseDN)
+	fi
+
 	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)(cn=$group_name))" gidNumber 2>/dev/null | grep -E "^gidNumber:" | head -1 | sed 's/gidNumber: //'
 }	
 
