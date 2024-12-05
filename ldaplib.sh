@@ -705,7 +705,9 @@ ldapGetUserGroups() {
 #  Parameters
 # ====================================
 #  1 - OU Name (Optional)
-#  2 - BaseDN (Optional)
+#  2 - Min UID (Optional)
+#  3 - Max UID (Optional)
+#  4 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
 ldapGetUsers() {
@@ -744,19 +746,32 @@ ldapGetUsers() {
 # ====================================
 #  Parameters
 # ====================================
-#  1 - BaseDN (Optional)
+#  1 - Min GID (Optional)
+#  2 - Max GID (Optional)
+#  3 - BaseDN (Optional)
 #      If omitted, getBaseDN is called
 # ====================================
 ldapGetGroups() {
 
-	local base_dn=$1
+	local min_gid=$1
+	local max_gid=$2
+	local base_dn=$3
+
+	search_filter=""
+	if [ -n "$min_gid" ]; then
+		search_filter+="(gidNumber>=$min_gid)"
+	fi
+
+	if [ -n "$max_gid" ]; then
+		search_filter+="(gidNumber<=$max_gid)"
+	fi
 
 	# If the base_dn was not passed, attempt to get it:
 	if ! [ -n "$base_dn" ]; then
 		base_dn=$(getBaseDN)
 	fi
 
-	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup))" cn 2>/dev/null | grep -E "^cn:" | sed 's/cn: //g'
+	ldapsearch -x -LLL -b "$base_dn" "(&(objectClass=posixGroup)$search_filter)" cn 2>/dev/null | grep -E "^cn:" | sed 's/cn: //g'
 }
 
 
