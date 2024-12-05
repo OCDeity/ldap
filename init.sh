@@ -20,7 +20,7 @@ getLDAPPassword LDAP_PASSWORD
 
 
 # Get the media GID for our upcoming service media-based services:
-MEDIA_GID=$(ldapGetGroupID "media" "$BASE_DN")
+MEDIA_GID=$(ldapGetGroupID "media")
 verifyResult "$?" "$MEDIA_GID"
 
 # Create our media-based services using the media GID as their primary group:
