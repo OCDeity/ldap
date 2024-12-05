@@ -15,10 +15,11 @@ fi
 
 showFilteredUsers() {
 
-    local ou_name=$1
-    local min_uid=$2
-    local max_uid=$3
-    local base_dn=$4
+    local label=$1
+    local ou_name=$2
+    local min_uid=$3
+    local max_uid=$4
+    local base_dn=$5
 
 
     # Get our array of users:
@@ -53,14 +54,14 @@ showFilteredUsers() {
         done
 
         echo ""
-        echo "dn: \"ou=$ou_name,$base_dn\" ($USER_COUNT):"
+        echo "$label found in dn: \"ou=$ou_name,$base_dn\" ($USER_COUNT):"
         echo -e "$USER_DATA" | column -t
     fi
 }
 
-showFilteredUsers "users" 2000 2999 "$BASE_DN"
-showFilteredUsers "services" 3000 3999 "$BASE_DN"
-showFilteredUsers "users" $LXC_OFFSET $((LXC_OFFSET + 9999)) "$BASE_DN"
-showFilteredUsers "services" $LXC_OFFSET $((LXC_OFFSET + 9999)) "$BASE_DN"
+showFilteredUsers "Users" "users" 2000 2999 "$BASE_DN"
+showFilteredUsers "Services" "services" 3000 3999 "$BASE_DN"
+showFilteredUsers "LXC Mapped Users" "users" $LXC_OFFSET $((LXC_OFFSET + 9999)) "$BASE_DN"
+showFilteredUsers "LXC Mapped Services" "services" $LXC_OFFSET $((LXC_OFFSET + 9999)) "$BASE_DN"
 echo ""
 exit 0
